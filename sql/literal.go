@@ -1,5 +1,7 @@
 package sql
 
+import "time"
+
 // String is a string literal expression for use in SQL statements
 type String string
 
@@ -30,4 +32,12 @@ type Bool bool
 // ToExpressionSQL returns the SQL for a boolean literal
 func (b Bool) ToExpressionSQL() (string, interface{}) {
 	return "", bool(b)
+}
+
+// Time is a time.Time literal expression for use in SQL statements
+type Time time.Time
+
+// ToExpressionSQL returns the SQL for a time literal
+func (t Time) ToExpressionSQL() (string, interface{}) {
+	return "", time.Time(t)
 }
