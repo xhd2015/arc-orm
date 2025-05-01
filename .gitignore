@@ -1,0 +1,17 @@
+.DS_Store
+.vscode
+.idea
+
+*.log
+*.bin
+*.a
+*.exe
+# the xgo binary
+
+# coverage
+cover*.out
+/*.log
+/tmp
+**/.xgo/gen
+__debug_bin*
+
