@@ -252,7 +252,7 @@ func TestQueryByID_Found(t *testing.T) {
 	mockEngine := &MockQueryEngine{
 		QueryFunc: func(ctx context.Context, sql string, args []interface{}, result interface{}) error {
 			// Check that the query and args were correctly passed
-			expectedSQL := "SELECT * FROM test_table WHERE id = ? LIMIT 1"
+			expectedSQL := "SELECT `test_table`.`id`, `test_table`.`name`, `test_table`.`age` FROM `test_table` WHERE `test_table`.`id` = ? LIMIT 1"
 			if sql != expectedSQL {
 				t.Errorf("Expected query '%s', got '%s'", expectedSQL, sql)
 			}
@@ -289,7 +289,7 @@ func TestQueryByID_Found(t *testing.T) {
 	}
 
 	// Execute QueryByID
-	result, err := orm.QueryByID(context.Background(), 42)
+	result, err := orm.GetByID(context.Background(), 42)
 
 	// Verify results
 	if err != nil {
@@ -333,15 +333,15 @@ func TestQueryByID_NotFound(t *testing.T) {
 	}
 
 	// Execute QueryByID
-	result, err := orm.QueryByID(context.Background(), 99)
+	_, err := orm.GetByID(context.Background(), 99)
 
 	// Verify not found handling
-	if err != nil {
-		t.Fatalf("Expected no error, got %v", err)
+	if err == nil {
+		t.Fatalf("Expected an error, got nil")
 	}
 
-	if result != nil {
-		t.Errorf("Expected nil result for not found, got %+v", result)
+	if diff := assert.Diff(err.Error(), "test_table not found with: id=99"); diff != "" {
+		t.Error(diff)
 	}
 }
 
@@ -367,7 +367,7 @@ func TestQueryByID_Error(t *testing.T) {
 	}
 
 	// Execute QueryByID
-	result, err := orm.QueryByID(context.Background(), 42)
+	result, err := orm.GetByID(context.Background(), 42)
 
 	// Verify error handling
 	if err == nil {

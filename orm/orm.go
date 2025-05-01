@@ -69,25 +69,51 @@ func (o *ORM[T, P]) Query(ctx context.Context, query string, args []interface{})
 	return results, nil
 }
 
-// QueryByID retrieves a record by its primary key
-func (o *ORM[T, P]) QueryByID(ctx context.Context, id int64) (*T, error) {
-	// Build the query string for finding by ID
-	// We assume the primary key field is called "id" for simplicity
-	// In a real implementation, this could be determined from struct tags or other metadata
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id = ? LIMIT 1", o.table.Name())
+// GetByID retrieves a record by its primary key
+// the record must exist, otherwise it will return an error
+func (o *ORM[T, P]) GetByID(ctx context.Context, id int64) (*T, error) {
+	// check id is valid
+	if id == 0 {
+		return nil, fmt.Errorf("id is 0")
+	}
+
+	// check table has id field
+	var idField field.Field
+	for _, f := range o.table.Fields() {
+		if f.Name() == "id" {
+			idField = f
+			break
+		}
+	}
+	if idField == nil {
+		return nil, fmt.Errorf("table %s is missing 'id' field", o.table.Name())
+	}
+	idFieldInt64, ok := idField.(field.Int64Field)
+	if !ok {
+		return nil, fmt.Errorf("id field is not an int64 field")
+	}
+
+	querySQL, args, err := sql.Select(o.table.Fields()...).
+		From(o.table.Name()).
+		Where(idFieldInt64.Eq(id)).
+		Limit(1).
+		SQL()
+	if err != nil {
+		return nil, fmt.Errorf("sql: %w", err)
+	}
 
 	// Create a slice to hold the result
 	var results []*T
 
 	// Execute the query
-	err := o.engine.GetEngine().Query(ctx, query, []interface{}{id}, &results)
+	err = o.engine.GetEngine().Query(ctx, querySQL, args, &results)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute QueryByID: %w", err)
+		return nil, fmt.Errorf("failed to execute Get: %w", err)
 	}
 
 	// Check if we found a result
 	if len(results) == 0 {
-		return nil, nil // Not found, return nil
+		return nil, fmt.Errorf("%s not found with: id=%d", o.table.Name(), id)
 	}
 
 	return results[0], nil

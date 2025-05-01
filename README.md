@@ -135,7 +135,7 @@ func main() {
     ctx := context.Background()
     
     // Query users by ID
-    userRecord, err := user.ORM.QueryByID(ctx, 123)
+    userRecord, err := user.ORM.GetByID(ctx, 123)
     if err != nil {
         log.Fatalf("Failed to query user: %v", err)
     }
