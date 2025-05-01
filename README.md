@@ -160,12 +160,9 @@ func main() {
     log.Printf("Inserted user with ID: %d", userID)
     
     // Update a user partially (only specified fields)
-    newName := "Jane Doe"
-    newEmail := "jane.doe@example.com"
-    
     updateData := &user.UserOptional{
-        Name:  &newName,
-        Email: &newEmail,
+        Name: sql.Ptr("Jane Doe"),
+        Email: sql.Ptr("jane.doe@example.com"),
         // Other fields are nil and won't be updated
         // UpdateTime will be automatically updated
     }
