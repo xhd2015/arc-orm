@@ -4,17 +4,35 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/xhd2015/ormx/example/comment"
-	"github.com/xhd2015/ormx/example/post"
-	"github.com/xhd2015/ormx/example/user"
 	"github.com/xhd2015/ormx/field"
+	"github.com/xhd2015/ormx/table"
+)
+
+var userTable = table.New("users")
+var postTable = table.New("posts")
+
+var (
+	UserID         = userTable.Int64("id")
+	UserName       = userTable.String("name")
+	UserEmail      = userTable.String("email")
+	UserAge        = userTable.Int64("age")
+	UserCreateTime = userTable.Time("create_time")
+	UserUpdateTime = userTable.Time("update_time")
+)
+
+var (
+	PostID         = postTable.Int64("id")
+	PostTitle      = postTable.String("title")
+	PostUserID     = postTable.Int64("user_id")
+	PostCreateTime = postTable.Time("create_time")
+	PostUpdateTime = postTable.Time("update_time")
 )
 
 func TestTypeBasedSqlBuilder(t *testing.T) {
 	// Basic SELECT
-	query := Select(user.ID, user.Name, user.Email).
-		From(user.Table.Name()).
-		Where(user.ID.Eq(1))
+	query := Select(UserID, UserName, UserEmail).
+		From(userTable.Name()).
+		Where(UserID.Eq(1))
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {
@@ -34,14 +52,21 @@ func TestTypeBasedSqlBuilder(t *testing.T) {
 	}
 }
 
+var commentTable = table.New("comments")
+var (
+	CommentID      = commentTable.Int64("id")
+	CommentPostID  = commentTable.Int64("post_id")
+	CommentContent = commentTable.String("content")
+)
+
 func TestJoinQueries(t *testing.T) {
 	// Basic JOIN
 	basicJoin := Select(
-		user.ID, user.Name,
-		post.ID, post.Title,
+		UserID, UserName,
+		PostID, PostTitle,
 	).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID))
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID))
 
 	sqlStr, params, err := basicJoin.SQL()
 	if err != nil {
@@ -59,16 +84,16 @@ func TestJoinQueries(t *testing.T) {
 
 	// More complex JOIN
 	complexJoin := Select(
-		user.ID, user.Name,
-		post.ID, post.Title,
-		comment.ID, comment.Content,
+		UserID, UserName,
+		PostID, PostTitle,
+		CommentID, CommentContent,
 	).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID)).
-		LeftJoin(comment.Table.Name(), post.ID.EqField(comment.PostID)).
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		LeftJoin(commentTable.Name(), PostID.EqField(CommentPostID)).
 		Where(
-			user.ID.Gt(10),
-			post.Title.Like("%golang%"),
+			UserID.Gt(10),
+			PostTitle.Like("%golang%"),
 		)
 
 	sqlStr, params, err = complexJoin.SQL()
@@ -94,13 +119,13 @@ func TestJoinQueries(t *testing.T) {
 
 func TestComparisonOperators(t *testing.T) {
 	// Test various comparison operators
-	query := Select(user.ID, user.Name).
-		From(user.Table.Name()).
+	query := Select(UserID, UserName).
+		From(userTable.Name()).
 		Where(
-			user.ID.Gt(10),
-			user.ID.Lt(20),
-			user.Name.Like("%John%"),
-			user.Email.In("john@example.com", "jane@example.com"),
+			UserID.Gt(10),
+			UserID.Lt(20),
+			UserName.Like("%John%"),
+			UserEmail.In("john@example.com", "jane@example.com"),
 		)
 
 	sqlStr, params, err := query.SQL()
@@ -135,12 +160,12 @@ func TestComparisonOperators(t *testing.T) {
 
 func TestStringOperations(t *testing.T) {
 	// Test string operations: contains, startsWith, endsWith
-	query := Select(user.ID, user.Name).
-		From(user.Table.Name()).
+	query := Select(UserID, UserName).
+		From(userTable.Name()).
 		Where(
-			user.Name.Contains("John"),
-			user.Email.StartsWith("john"),
-			user.Email.EndsWith("example.com"),
+			UserName.Contains("John"),
+			UserEmail.StartsWith("john"),
+			UserEmail.EndsWith("example.com"),
 		)
 
 	sqlStr, _, err := query.SQL()
@@ -154,8 +179,8 @@ func TestStringOperations(t *testing.T) {
 	}
 
 	// Check limit/offset features
-	limitOnlyQuery := Select(user.ID).
-		From(user.Table.Name()).
+	limitOnlyQuery := Select(UserID).
+		From(userTable.Name()).
 		Limit(10)
 
 	sqlStr, _, err = limitOnlyQuery.SQL()
@@ -167,8 +192,8 @@ func TestStringOperations(t *testing.T) {
 		t.Errorf("Expected SQL to contain 'LIMIT 10', got: %s", sqlStr)
 	}
 
-	offsetOnlyQuery := Select(user.ID).
-		From(user.Table.Name()).
+	offsetOnlyQuery := Select(UserID).
+		From(userTable.Name()).
 		Offset(5)
 
 	sqlStr, _, err = offsetOnlyQuery.SQL()
@@ -196,10 +221,10 @@ func fieldDesc(name string) field.OrderField {
 
 func TestAggregatesAndGroupBy(t *testing.T) {
 	// Test GROUP BY and aggregate functions
-	query := Select(user.ID, Count(post.ID).As("post_count")).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID)).
-		GroupBy(user.ID)
+	query := Select(UserID, Count(PostID).As("post_count")).
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		GroupBy(UserID)
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {
@@ -216,11 +241,11 @@ func TestAggregatesAndGroupBy(t *testing.T) {
 	}
 
 	// Test with HAVING clause
-	queryWithHaving := Select(user.ID, Count(post.ID).As("post_count")).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID)).
-		GroupBy(user.ID).
-		Having(Count(post.ID).Gt(5))
+	queryWithHaving := Select(UserID, Count(PostID).As("post_count")).
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		GroupBy(UserID).
+		Having(Count(PostID).Gt(5))
 
 	sqlStr, params, err = queryWithHaving.SQL()
 	if err != nil {
@@ -241,19 +266,19 @@ func TestAggregatesAndGroupBy(t *testing.T) {
 
 	// Test a complex query with all features
 	complexQuery := Select(
-		user.ID, user.Name,
-		post.ID, post.Title,
-		Count(comment.ID).As("comment_count"),
+		UserID, UserName,
+		PostID, PostTitle,
+		Count(CommentID).As("comment_count"),
 	).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID)).
-		LeftJoin(comment.Table.Name(), post.ID.EqField(comment.PostID)).
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		LeftJoin(commentTable.Name(), PostID.EqField(CommentPostID)).
 		Where(
-			user.ID.Gt(10),
-			post.Title.Like("%golang%"),
+			UserID.Gt(10),
+			PostTitle.Like("%golang%"),
 		).
-		GroupBy(user.ID, user.Name, post.ID, post.Title).
-		Having(Count(comment.ID).Gt(2)).
+		GroupBy(UserID, UserName, PostID, PostTitle).
+		Having(Count(CommentID).Gt(2)).
 		OrderBy(fieldDesc("comment_count")).
 		Limit(10).
 		Offset(20)
@@ -288,10 +313,10 @@ func TestAggregatesAndGroupBy(t *testing.T) {
 func TestFieldAliases(t *testing.T) {
 	// Test field aliases
 	query := Select(
-		user.ID.As("user_id"),
-		user.Name.As("user_name"),
+		UserID.As("user_id"),
+		UserName.As("user_name"),
 	).
-		From(user.Table.Name())
+		From(userTable.Name())
 
 	sqlStr, _, err := query.SQL()
 	if err != nil {
@@ -305,12 +330,12 @@ func TestFieldAliases(t *testing.T) {
 
 	// Test join with field aliases
 	joinQuery := Select(
-		user.ID.As("user_id"),
-		user.Name.As("user_name"),
-		post.Title.As("post_title"),
+		UserID.As("user_id"),
+		UserName.As("user_name"),
+		PostTitle.As("post_title"),
 	).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID))
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID))
 
 	sqlStr, _, err = joinQuery.SQL()
 	if err != nil {
@@ -324,12 +349,12 @@ func TestFieldAliases(t *testing.T) {
 
 	// Test aggregate function with alias
 	aggregateQuery := Select(
-		user.ID.As("user_id"),
-		Count(post.ID).As("post_count"),
+		UserID.As("user_id"),
+		Count(PostID).As("post_count"),
 	).
-		From(user.Table.Name()).
-		Join(post.Table.Name(), user.ID.EqField(post.UserID)).
-		GroupBy(user.ID)
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		GroupBy(UserID)
 
 	sqlStr, _, err = aggregateQuery.SQL()
 	if err != nil {
@@ -339,5 +364,32 @@ func TestFieldAliases(t *testing.T) {
 	expectedSQL = "SELECT `users`.`id` AS `user_id`, COUNT(`posts`.`id`) AS `post_count` FROM `users` JOIN `posts` ON `users`.`id` = `posts`.`user_id` GROUP BY `users`.`id`"
 	if sqlStr != expectedSQL {
 		t.Errorf("Expected SQL: %s, got: %s", expectedSQL, sqlStr)
+	}
+}
+
+func TestReadmeExample(t *testing.T) {
+	// Test the example query from README.md
+	query := Select(UserID, UserName, PostTitle).
+		From(userTable.Name()).
+		Join(postTable.Name(), UserID.EqField(PostUserID)).
+		Where(UserAge.Gt(18)).
+		OrderBy(PostCreateTime.Desc()).
+		Limit(10)
+
+	sqlStr, params, err := query.SQL()
+	if err != nil {
+		t.Fatalf("Failed to generate SQL: %v", err)
+	}
+
+	expectedSQL := "SELECT `users`.`id`, `users`.`name`, `posts`.`title` FROM `users` JOIN `posts` ON `users`.`id` = `posts`.`user_id` WHERE `users`.`age` > ? ORDER BY `posts`.`create_time` DESC LIMIT 10"
+	if sqlStr != expectedSQL {
+		t.Errorf("Expected SQL: %s, got: %s", expectedSQL, sqlStr)
+	}
+
+	if len(params) != 1 {
+		t.Errorf("Expected 1 param, got %d", len(params))
+	}
+	if v, ok := params[0].(int64); !ok || v != 18 {
+		t.Errorf("Expected param to be int64(18), got %T %v", params[0], params[0])
 	}
 }

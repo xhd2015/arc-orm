@@ -18,6 +18,10 @@ func (f Int64Field) Table() string {
 
 // ToSQL returns the SQL representation of the field
 func (f Int64Field) ToSQL() string {
+	// If the field has no table, or the table name is empty, just use the field name
+	if f.TableName == "" {
+		return "`" + f.FieldName + "`"
+	}
 	return "`" + f.TableName + "`.`" + f.FieldName + "`"
 }
 

@@ -2,14 +2,12 @@ package sql
 
 import (
 	"testing"
-
-	"github.com/xhd2015/ormx/example/user"
 )
 
 func TestDeleteFromBasic(t *testing.T) {
 	// Test basic DELETE query
-	query := DeleteFrom(user.Table.Name()).
-		Where(user.ID.Eq(1))
+	query := DeleteFrom(userTable.Name()).
+		Where(UserID.Eq(1))
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {
@@ -31,10 +29,10 @@ func TestDeleteFromBasic(t *testing.T) {
 
 func TestDeleteFromMultipleConditions(t *testing.T) {
 	// Test DELETE with multiple conditions
-	query := DeleteFrom(user.Table.Name()).
+	query := DeleteFrom(userTable.Name()).
 		Where(
-			user.Name.Like("%John%"),
-			user.Age.Gt(30),
+			UserName.Like("%John%"),
+			UserAge.Gt(30),
 		)
 
 	sqlStr, params, err := query.SQL()
@@ -60,8 +58,8 @@ func TestDeleteFromMultipleConditions(t *testing.T) {
 
 func TestDeleteFromWithLimit(t *testing.T) {
 	// Test DELETE with LIMIT
-	query := DeleteFrom(user.Table.Name()).
-		Where(user.Age.Lt(18)).
+	query := DeleteFrom(userTable.Name()).
+		Where(UserAge.Lt(18)).
 		Limit(10)
 
 	sqlStr, params, err := query.SQL()
@@ -84,7 +82,7 @@ func TestDeleteFromWithLimit(t *testing.T) {
 
 func TestDeleteFromAllRows(t *testing.T) {
 	// Test DELETE without WHERE (all rows)
-	query := DeleteFrom(user.Table.Name())
+	query := DeleteFrom(userTable.Name())
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {

@@ -3,16 +3,14 @@ package sql
 import (
 	"testing"
 	"time"
-
-	"github.com/xhd2015/ormx/example/user"
 )
 
 func TestInsertIntoBasic(t *testing.T) {
 	// Test basic INSERT query
-	query := InsertInto(user.Table.Name()).
-		Set(user.Name, String("John Doe")).
-		Set(user.Email, String("john@example.com")).
-		Set(user.Age, Int64(30))
+	query := InsertInto(userTable.Name()).
+		Set(UserName, String("John Doe")).
+		Set(UserEmail, String("john@example.com")).
+		Set(UserAge, Int64(30))
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {
@@ -41,17 +39,17 @@ func TestInsertIntoBasic(t *testing.T) {
 func TestInsertIntoWithTimeExpression(t *testing.T) {
 	// Test INSERT with expressions
 	now := time.Now()
-	query := InsertInto(user.Table.Name()).
-		Set(user.Name, String("Jane Smith")).
-		Set(user.Email, String("jane@example.com")).
-		Set(user.CreatedAt, Time(now))
+	query := InsertInto(userTable.Name()).
+		Set(UserName, String("Jane Smith")).
+		Set(UserEmail, String("jane@example.com")).
+		Set(UserCreateTime, Time(now))
 
 	sqlStr, params, err := query.SQL()
 	if err != nil {
 		t.Fatalf("Failed to generate SQL: %v", err)
 	}
 
-	expectedSQL := "INSERT INTO `users` SET `name`=?, `email`=?, `created_at`=?"
+	expectedSQL := "INSERT INTO `users` SET `name`=?, `email`=?, `create_time`=?"
 	if sqlStr != expectedSQL {
 		t.Errorf("Expected SQL: %s, got: %s", expectedSQL, sqlStr)
 	}

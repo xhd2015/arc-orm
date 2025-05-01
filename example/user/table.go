@@ -1,15 +1,42 @@
 package user
 
-import "github.com/xhd2015/ormx/table"
+import (
+	"time"
+
+	"github.com/xhd2015/ormx/example/engine"
+	"github.com/xhd2015/ormx/orm"
+	"github.com/xhd2015/ormx/table"
+)
 
 // Table is the users table
 var Table = table.New("users")
 
 // Field definitions
 var (
-	ID        = Table.Int64("id")
-	Name      = Table.String("name")
-	Email     = Table.String("email")
-	CreatedAt = Table.Time("created_at")
-	Age       = Table.Int64("age")
+	ID         = Table.Int64("id")
+	Name       = Table.String("name")
+	Email      = Table.String("email")
+	Age        = Table.Int64("age")
+	CreateTime = Table.Time("create_time")
+	UpdateTime = Table.Time("update_time")
 )
+
+var ORM = orm.MustNew[User, UserOptional](engine.GetEngine(), Table)
+
+type User struct {
+	ID         int64
+	Name       string
+	Age        int64
+	Email      string
+	CreateTime time.Time
+	UpdateTime time.Time
+}
+
+type UserOptional struct {
+	ID         *int64
+	Name       *string
+	Age        *int64
+	Email      *string
+	CreateTime *time.Time
+	UpdateTime *time.Time
+}
