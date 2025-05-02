@@ -21,22 +21,22 @@ var (
 	UpdateTime = Table.Time("update_time")
 )
 
-var ORM = orm.MustNew[User, UserOptional](engine.GetEngine(), Table)
+var ORM = orm.Bind[User, UserOptional](engine.GetEngine(), Table)
 
 type User struct {
-	ID         int64
-	Name       string
-	Age        int64
-	Email      string
+	Id int64
+	Name string
+	Email string
+	Age int64
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type UserOptional struct {
-	ID         *int64
-	Name       *string
-	Age        *int64
-	Email      *string
+	Id *int64
+	Name *string
+	Email *string
+	Age *int64
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }

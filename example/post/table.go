@@ -20,18 +20,20 @@ var (
 	UpdateTime = Table.Time("update_time")
 )
 
-var ORM = orm.MustNew[Post, PostOptional](engine.GetEngine(), Table)
+var ORM = orm.Bind[Post, PostOptional](engine.GetEngine(), Table)
 
 type Post struct {
-	ID         int64
-	Title      string
-	UserID     int64
+	Id int64
+	Title string
+	UserId int64
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type PostOptional struct {
-	ID     *int64
-	Title  *string
-	UserID *int64
+	Id *int64
+	Title *string
+	UserId *int64
+	CreateTime *time.Time
+	UpdateTime *time.Time
 }

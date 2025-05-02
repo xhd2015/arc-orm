@@ -142,7 +142,7 @@ func TestQuery_Success(t *testing.T) {
 	// No count field in table
 
 	// Create ORM instance
-	orm, err := New[TestModel, TestModelOptional](mockEngine, testTable)
+	orm, err := bind[TestModel, TestModelOptional](mockEngine, testTable)
 	if err != nil {
 		t.Fatalf("Failed to create ORM: %v", err)
 	}
@@ -190,7 +190,7 @@ func TestQuery_Error(t *testing.T) {
 	// No count field in table
 
 	// Create ORM instance
-	orm, err := New[TestModel, TestModelOptional](mockEngine, testTable)
+	orm, err := bind[TestModel, TestModelOptional](mockEngine, testTable)
 	if err != nil {
 		t.Fatalf("Failed to create ORM: %v", err)
 	}
@@ -229,7 +229,7 @@ func TestQuery_EmptyResults(t *testing.T) {
 	// No count field in table
 
 	// Create ORM instance
-	orm, err := New[TestModel, TestModelOptional](mockEngine, testTable)
+	orm, err := bind[TestModel, TestModelOptional](mockEngine, testTable)
 	if err != nil {
 		t.Fatalf("Failed to create ORM: %v", err)
 	}
@@ -690,7 +690,7 @@ func TestCount_Success(t *testing.T) {
 	// No count field in table
 
 	// Create ORM instance
-	orm, err := New[TestModel, TestModelOptional](mockEngine, testTable)
+	orm, err := bind[TestModel, TestModelOptional](mockEngine, testTable)
 	if err != nil {
 		t.Fatalf("Failed to create ORM: %v", err)
 	}
@@ -724,7 +724,7 @@ func TestValidate_RejectsCountField(t *testing.T) {
 	testTable.Int64("count") // This should cause validation to fail
 
 	// Try to create ORM instance
-	_, err := New[TestModel, TestModelOptional](nil, testTable)
+	_, err := bind[TestModel, TestModelOptional](nil, testTable)
 
 	// Verify error
 	if err == nil {
@@ -760,7 +760,7 @@ func TestValidate_WrongCountFieldType(t *testing.T) {
 	testTable.Int64("age")
 
 	// Try to create ORM instance
-	_, err := New[WrongCountModel, WrongCountOptional](nil, testTable)
+	_, err := bind[WrongCountModel, WrongCountOptional](nil, testTable)
 
 	// Verify error
 	if err == nil {

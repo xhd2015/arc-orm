@@ -14,4 +14,4 @@ cover*.out
 /tmp
 **/.xgo/gen
 __debug_bin*
-
+/ormx

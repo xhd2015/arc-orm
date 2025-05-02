@@ -11,7 +11,7 @@ import (
 // Table is the comments table
 var Table = table.New("comments")
 
-var ORM = orm.MustNew[Comment, CommentOptional](engine.GetEngine(), Table)
+var ORM = orm.Bind[Comment, CommentOptional](engine.GetEngine(), Table)
 
 // Field definitions
 var (
@@ -23,17 +23,17 @@ var (
 )
 
 type Comment struct {
-	ID         int64
-	Content    string
-	PostID     int64
+	Id int64
+	Content string
+	PostId int64
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type CommentOptional struct {
-	ID         *int64
-	Content    *string
-	PostID     *int64
+	Id *int64
+	Content *string
+	PostId *int64
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }

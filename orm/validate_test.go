@@ -108,7 +108,7 @@ func TestValidate_ValidModel(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with valid model and options
-	orm, err := New[ValidModel, ValidOptional](mockEng, validTable)
+	orm, err := bind[ValidModel, ValidOptional](mockEng, validTable)
 	if err != nil {
 		t.Fatalf("Expected validation to pass but got error: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestValidate_ModelWithExtraField(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with model having extra field
-	_, err := New[ModelWithExtraField, ValidOptional](mockEng, validTable)
+	_, err := bind[ModelWithExtraField, ValidOptional](mockEng, validTable)
 	if err == nil {
 		t.Fatal("Expected validation to fail due to extra field, but it passed")
 	}
@@ -140,7 +140,7 @@ func TestValidate_ModelMissingField(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with model missing a field
-	_, err := New[ModelMissingField, ValidOptional](mockEng, validTable)
+	_, err := bind[ModelMissingField, ValidOptional](mockEng, validTable)
 	if err == nil {
 		t.Fatal("Expected validation to fail due to missing field, but it passed")
 	}
@@ -157,7 +157,7 @@ func TestValidate_TableMissingField(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with table missing a field
-	_, err := New[ValidModel, ValidOptional](mockEng, tableMissingField)
+	_, err := bind[ValidModel, ValidOptional](mockEng, tableMissingField)
 	if err == nil {
 		t.Fatal("Expected validation to fail due to table missing field, but it passed")
 	}
@@ -174,7 +174,7 @@ func TestValidate_WrongFieldType(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with model having wrong field type
-	_, err := New[ModelWrongFieldType, ValidOptional](mockEng, validTable)
+	_, err := bind[ModelWrongFieldType, ValidOptional](mockEng, validTable)
 	if err == nil {
 		t.Fatal("Expected validation to fail due to wrong field type, but it passed")
 	}
@@ -191,7 +191,7 @@ func TestValidate_OptionalNonPointer(t *testing.T) {
 	mockEng := &mockEngine{}
 
 	// Test with optional fields having non-pointer field
-	_, err := New[ValidModel, OptionalNonPointer](mockEng, validTable)
+	_, err := bind[ValidModel, OptionalNonPointer](mockEng, validTable)
 	if err == nil {
 		t.Fatal("Expected validation to fail due to non-pointer optional field, but it passed")
 	}
@@ -206,7 +206,7 @@ func TestValidate_OptionalNonPointer(t *testing.T) {
 
 func TestValidate_NonStructModel(t *testing.T) {
 	// Using string as a non-struct model type
-	_, err := New[string, ValidOptional](&mockEngine{}, createValidTable())
+	_, err := bind[string, ValidOptional](&mockEngine{}, createValidTable())
 	if err == nil {
 		t.Fatal("Expected validation to fail for non-struct model, but it passed")
 	}
@@ -219,7 +219,7 @@ func TestValidate_NonStructModel(t *testing.T) {
 
 func TestValidate_NonStructOptional(t *testing.T) {
 	// Using string as a non-struct optional type
-	_, err := New[ValidModel, string](&mockEngine{}, createValidTable())
+	_, err := bind[ValidModel, string](&mockEngine{}, createValidTable())
 	if err == nil {
 		t.Fatal("Expected validation to fail for non-struct optional fields, but it passed")
 	}
@@ -282,7 +282,7 @@ func TestValidate_FieldNameConversion(t *testing.T) {
 	}
 
 	// Check if ORM validation succeeds with proper conversion
-	orm, err := New[ModelWithCamelCase, CamelCaseOptional](&mockEngine{}, table)
+	orm, err := bind[ModelWithCamelCase, CamelCaseOptional](&mockEngine{}, table)
 	if err != nil {
 		t.Fatalf("Expected validation to pass with name conversion but got error: %v", err)
 	}
@@ -321,7 +321,7 @@ func TestValidate_TimeFields(t *testing.T) {
 	}
 
 	// Test with proper types - should pass
-	_, err := New[ModelWithTimeFields, ModelWithTimeFieldsOpt](nil, testTable)
+	_, err := bind[ModelWithTimeFields, ModelWithTimeFieldsOpt](nil, testTable)
 	if err != nil {
 		t.Errorf("Expected validation to pass for correct time fields, got error: %v", err)
 	}
@@ -355,7 +355,7 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 					UpdateTime *time.Time
 				}
 
-				_, err := New[WrongCreateTimeType, WrongCreateTimeTypeOpt](nil, testTable)
+				_, err := bind[WrongCreateTimeType, WrongCreateTimeTypeOpt](nil, testTable)
 				return testTable, err
 			},
 			expectedError: "model field 'CreateTime' must be of type time.Time",
@@ -380,7 +380,7 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 					UpdateTime *int64
 				}
 
-				_, err := New[WrongUpdateTimeType, WrongUpdateTimeTypeOpt](nil, testTable)
+				_, err := bind[WrongUpdateTimeType, WrongUpdateTimeTypeOpt](nil, testTable)
 				return testTable, err
 			},
 			expectedError: "model field 'UpdateTime' must be of type time.Time",
@@ -405,7 +405,7 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 					UpdateTime *time.Time
 				}
 
-				_, err := New[Model, WrongOptionalType](nil, testTable)
+				_, err := bind[Model, WrongOptionalType](nil, testTable)
 				return testTable, err
 			},
 			expectedError: "optional field CreateTime must be a *time.Time",
@@ -430,7 +430,7 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 					UpdateTime *time.Time
 				}
 
-				_, err := New[Model, OptModel](nil, testTable)
+				_, err := bind[Model, OptModel](nil, testTable)
 				return testTable, err
 			},
 			expectedError: "table field 'create_time' must be of type TimeField",

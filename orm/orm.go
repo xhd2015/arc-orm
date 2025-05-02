@@ -31,8 +31,17 @@ var (
 	ErrMissingCountField = errors.New("model type must have a Count field of type int64")
 )
 
-// New creates a new ORM instance and validates the model and optional fields types
-func New[T any, P any](engine engine.Factory, table table.Table) (*ORM[T, P], error) {
+// Bind creates a new ORM instance and panics if validation fails
+func Bind[T any, P any](engine engine.Factory, table table.Table) *ORM[T, P] {
+	orm, err := bind[T, P](engine, table)
+	if err != nil {
+		panic(err)
+	}
+	return orm
+}
+
+// bind creates a new ORM instance and validates the model and optional fields types
+func bind[T any, P any](engine engine.Factory, table table.Table) (*ORM[T, P], error) {
 	orm := &ORM[T, P]{
 		table:  table,
 		engine: engine,
@@ -44,15 +53,6 @@ func New[T any, P any](engine engine.Factory, table table.Table) (*ORM[T, P], er
 	}
 
 	return orm, nil
-}
-
-// MustNew creates a new ORM instance and panics if validation fails
-func MustNew[T any, P any](engine engine.Factory, table table.Table) *ORM[T, P] {
-	orm, err := New[T, P](engine, table)
-	if err != nil {
-		panic(err)
-	}
-	return orm
 }
 
 // Query executes the provided SQL query and returns matching records

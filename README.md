@@ -52,7 +52,7 @@ var ORM = orm.MustNew[User, UserOptional](engine.GetEngine(), Table)
 
 // User model that matches the table structure
 type User struct {
-    ID         int64
+    Id         int64
     Name       string
     Age        int64
     Email      string
@@ -62,7 +62,7 @@ type User struct {
 
 // UserOptional for partial updates (all fields are pointers)
 type UserOptional struct {
-    ID         *int64
+    Id         *int64
     Name       *string
     Age        *int64
     Email      *string
@@ -100,18 +100,18 @@ var ORM = orm.MustNew[Post, PostOptional](engine.GetEngine(), Table)
 
 // Post model that matches the table structure
 type Post struct {
-    ID         int64
+    Id         int64
     Title      string
-    UserID     int64
+    UserId     int64
     CreateTime time.Time
     UpdateTime time.Time
 }
 
 // PostOptional for partial updates (all fields are pointers)
 type PostOptional struct {
-    ID         *int64
+    Id         *int64
     Title      *string
-    UserID     *int64
+    UserId     *int64
     CreateTime *time.Time
     UpdateTime *time.Time
 }
