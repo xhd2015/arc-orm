@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/xhd2015/xgo/support/assert"
+	"github.com/xhd2015/xgo/support/cmd"
+	"github.com/xhd2015/xgo/support/goinfo"
 )
 
 const base = `
@@ -29,11 +31,12 @@ var (
 	CreateTime = Table.Time("create_time")
 	UpdateTime = Table.Time("update_time")
 )
-
-var ORM = orm.Bind[User, UserOptional](nil, Table)
 `
 
 const FullDefiniton = `
+
+var ORM = orm.Bind[User, UserOptional](nil, Table)
+
 type User struct {
 	Id         int64
 	Name       string
@@ -53,6 +56,23 @@ type UserOptional struct {
 
 // Helper function to set up test directory with test files
 func setupTestDir(t *testing.T, inputCode string) (dir string, file string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	absWd, err := filepath.Abs(wd)
+	if err != nil {
+		t.Fatalf("Failed to get absolute working directory: %v", err)
+	}
+	subPaths, _, err := goinfo.ResolveMainModule(absWd)
+	if err != nil {
+		t.Fatalf("Failed to resolve main module: %v", err)
+	}
+	projectRoot := absWd
+	for i, n := 0, len(subPaths); i < n; i++ {
+		projectRoot = filepath.Dir(projectRoot)
+	}
+
 	tmpDir, err := os.MkdirTemp("", "ormx-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
@@ -64,6 +84,8 @@ func setupTestDir(t *testing.T, inputCode string) (dir string, file string) {
 go 1.19
 
 require github.com/xhd2015/ormx v0.0.0
+
+replace github.com/xhd2015/ormx => `+projectRoot+`
 `), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write go.mod: %v", err)
@@ -76,6 +98,11 @@ require github.com/xhd2015/ormx v0.0.0
 	err = os.WriteFile(file, []byte(testFile), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write test file: %v", err)
+	}
+
+	err = cmd.Dir(tmpDir).Run("go", "mod", "tidy")
+	if err != nil {
+		t.Fatalf("Failed to tidy go.mod: %v", err)
 	}
 
 	return tmpDir, file
@@ -107,6 +134,9 @@ func TestGen_NoChange(t *testing.T) {
 	}
 
 	expectCode := base + `
+
+var ORM = orm.Bind[User, UserOptional](nil, Table)
+
 type User struct {
 	Id int64
 	Name string
@@ -137,14 +167,15 @@ func TestGen_CreateModel(t *testing.T) {
 	}
 
 	// Expect the base code plus newly created User and UserOptional models
-	expectCode := base + `type User struct {
+	expectCode := base + `var ORM = orm.Bind[Testorm, TestormOptional](nil, Table)
+type Testorm struct {
 	Id int64
 	Name string
 	Email string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
-type UserOptional struct {
+type TestormOptional struct {
 	Id *int64
 	Name *string
 	Email *string
@@ -162,7 +193,7 @@ type UserOptional struct {
 // TestGen_AddMissingField tests that missing fields in User struct are added
 func TestGen_AddMissingField(t *testing.T) {
 	// Define User with missing Email field
-	incompleteDefinition := `
+	incompleteDefinition := `var ORM = orm.Bind[User, UserOptional](nil, Table)
 type User struct {
 	Id         int64
 	Name       string
@@ -184,7 +215,7 @@ type UserOptional struct {
 		t.Fatalf("Failed to run gen: %v", err)
 	}
 
-	want := base + `
+	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
 type User struct {
 	Id int64
 	Name string
@@ -210,7 +241,7 @@ type UserOptional struct {
 // TestGen_RemoveExtraField tests that extra fields not defined in the Table are removed
 func TestGen_RemoveExtraField(t *testing.T) {
 	// Define User with an extra Age field that is not in the Table definition
-	codeWithExtraField := `
+	codeWithExtraField := `var ORM = orm.Bind[User, UserOptional](nil, Table)
 type User struct {
 	Id         int64
 	Name       string
@@ -236,7 +267,7 @@ type UserOptional struct {
 
 	// The extra Age field should be removed in the generated code
 	// But comments are preserved
-	want := base + `
+	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
 type User struct {
 	Id int64
 	Name string

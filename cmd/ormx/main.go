@@ -142,6 +142,10 @@ func gen(args []string) error {
 }
 
 func amendModels(edit *goedit.Edit, file *parse.File, table *parse.TableRelation) {
+	if table.NeedCreateORM {
+		// var ORM = orm.Bind[table.Model, table.OptionalModel](nil, table.TableName)
+		edit.Insert(file.AST.End(), fmt.Sprintf("\nvar ORM = orm.Bind[%s, %s](nil, %s)", table.Model.Name, table.OptionalModel.Name, table.TablVarName))
+	}
 	updateStructFields(edit, file, table, table.Model, table.Fields, table.Model.Fields, false)
 	updateStructFields(edit, file, table, table.OptionalModel, table.Fields, table.OptionalModel.Fields, true)
 }

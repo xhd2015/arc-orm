@@ -4,11 +4,14 @@ import (
 	"encoding/json"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/xhd2015/xgo/support/cmd"
+	"github.com/xhd2015/xgo/support/goinfo"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -31,37 +34,22 @@ func TestExtractTableName(t *testing.T) {
 	}
 
 	pkg := pkgs[0]
-	typeInfo := pkg.TypesInfo
 
-	// Find the Table variable in the AST
-	var tableExpr ast.Expr
-	for _, file := range pkg.Syntax {
-		for _, decl := range file.Decls {
-			genDecl, ok := decl.(*ast.GenDecl)
-			if !ok || genDecl.Tok != token.VAR {
-				continue
-			}
-			for _, spec := range genDecl.Specs {
-				valueSpec, ok := spec.(*ast.ValueSpec)
-				if !ok {
-					continue
-				}
-				for i, name := range valueSpec.Names {
-					if name.Name == "Table" && i < len(valueSpec.Values) {
-						tableExpr = name
-						break
-					}
-				}
-			}
-		}
-	}
-
-	if tableExpr == nil {
+	tableVar, _ := findVarDef(pkg, "Table")
+	if tableVar == nil {
 		t.Fatal("Table variable not found in test files")
+	}
+	tableVarDefObj, ok := pkg.TypesInfo.Defs[tableVar]
+	if !ok {
+		t.Fatal("Table variable not found in test files")
+	}
+	tableVarDef, ok := tableVarDefObj.(*types.Var)
+	if !ok {
+		t.Fatal("Table variable is not a types.Var")
 	}
 
 	// Test extractTableName
-	tableName := extractTableName(tableExpr, typeInfo, pkg)
+	tableName := extractTableFromVar(pkg, tableVarDef)
 	expected := "test_users"
 	if tableName != expected {
 		t.Errorf("Expected table name %q, got %q", expected, tableName)
@@ -163,8 +151,21 @@ func TestExtractFieldRelations(t *testing.T) {
 
 	pkg := pkgs[0]
 
+	tableVar, _ := findVarDef(pkg, "Table")
+	if tableVar == nil {
+		t.Fatal("Table variable not found in test files")
+	}
+	tableVarDefObj, ok := pkg.TypesInfo.Defs[tableVar]
+	if !ok {
+		t.Fatal("Table variable not found in test files")
+	}
+	tableVarDef, ok := tableVarDefObj.(*types.Var)
+	if !ok {
+		t.Fatal("Table variable is not a types.Var")
+	}
+
 	// Test extractFieldRelations
-	fieldRelations := extractFieldRelations(pkg, "Table")
+	fieldRelations := extractFieldRelations(pkg, tableVarDef)
 	if len(fieldRelations) != 5 {
 		t.Errorf("Expected 5 field relations, got %d", len(fieldRelations))
 	}
@@ -207,6 +208,22 @@ func setupTestDir(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+	absWd, err := filepath.Abs(wd)
+	if err != nil {
+		t.Fatalf("Failed to get absolute working directory: %v", err)
+	}
+	subPaths, _, err := goinfo.ResolveMainModule(absWd)
+	if err != nil {
+		t.Fatalf("Failed to resolve main module: %v", err)
+	}
+	projectRoot := absWd
+	for i, n := 0, len(subPaths); i < n; i++ {
+		projectRoot = filepath.Dir(projectRoot)
+	}
 
 	// Create a go.mod file
 	err = os.WriteFile(filepath.Join(tmpDir, "go.mod"), []byte(`module testormx
@@ -214,6 +231,8 @@ func setupTestDir(t *testing.T) string {
 go 1.19
 
 require github.com/xhd2015/ormx v0.0.0
+
+replace github.com/xhd2015/ormx => `+projectRoot+`
 `), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write go.mod: %v", err)
@@ -263,6 +282,11 @@ type UserOptional struct {
 	err = os.WriteFile(filepath.Join(tmpDir, "testorm.go"), []byte(testFile), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write test file: %v", err)
+	}
+
+	err = cmd.Dir(tmpDir).Run("go", "mod", "tidy")
+	if err != nil {
+		t.Fatalf("Failed to tidy go.mod: %v", err)
 	}
 
 	return tmpDir

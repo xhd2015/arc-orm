@@ -18,22 +18,25 @@ var (
 	ID         = Table.Int64("id")
 	Content    = Table.String("content")
 	PostID     = Table.Int64("post_id")
+	Score      = Table.Float64("score")
 	CreateTime = Table.Time("create_time")
 	UpdateTime = Table.Time("update_time")
 )
 
 type Comment struct {
-	Id int64
-	Content string
-	PostId int64
+	Id         int64
+	Content    string
+	PostId     int64
+	Score      float64
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type CommentOptional struct {
-	Id *int64
-	Content *string
-	PostId *int64
+	Id         *int64
+	Content    *string
+	PostId     *int64
+	Score      *float64
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }
