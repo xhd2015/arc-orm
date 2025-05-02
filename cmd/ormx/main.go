@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/xhd2015/less-gen/go/gostruct"
 	"github.com/xhd2015/less-gen/strcase"
 	"github.com/xhd2015/ormx/parse"
-	parse_edit "github.com/xhd2015/ormx/parse/edit"
 	"github.com/xhd2015/xgo/support/edit/goedit"
 	"github.com/xhd2015/xgo/support/goinfo"
 )
@@ -157,22 +157,22 @@ func updateStructFields(edit *goedit.Edit, file *parse.File, table *parse.TableR
 		}
 	}
 
-	current := parse_edit.ParseStruct(structType, structTypeName)
+	current := gostruct.ParseStruct(structType, structTypeName)
 
 	// Create desired fields from table fields
-	var desiredFields []parse_edit.FieldDef
+	var desiredFields []gostruct.FieldDef
 	for _, tableField := range tableFields {
 		structType := getStructType(tableField.Type)
 		if asPointer {
 			structType = "*" + structType
 		}
-		desiredFields = append(desiredFields, parse_edit.FieldDef{
+		desiredFields = append(desiredFields, gostruct.FieldDef{
 			Name: strcase.SnakeToCamel(tableField.ColumnName),
 			Type: structType,
 		})
 	}
 
-	desired := parse_edit.StructDef{
+	desired := gostruct.StructDef{
 		Name:   model.Name,
 		Fields: desiredFields,
 	}
@@ -183,14 +183,14 @@ func updateStructFields(edit *goedit.Edit, file *parse.File, table *parse.TableR
 	}
 
 	// Merge the structs
-	result := parse_edit.MergeStructs(current, desired, reserveFields)
+	result := gostruct.MergeStructs(current, desired, reserveFields)
 
 	if model.Node != nil {
-		edit.Replace(model.Node.Pos(), model.Node.End(), result.Format(parse_edit.FormatOptions{
+		edit.Replace(model.Node.Pos(), model.Node.End(), result.Format(gostruct.FormatOptions{
 			NoPrefixType: true,
 		}))
 	} else {
-		edit.Insert(file.AST.End(), "\n"+result.Format(parse_edit.FormatOptions{
+		edit.Insert(file.AST.End(), "\n"+result.Format(gostruct.FormatOptions{
 			NoPrefixType: false,
 		}))
 	}

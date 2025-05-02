@@ -275,7 +275,8 @@ func TestLoadAndExtractRelations(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	// Call LoadAndExtractRelations
-	pkgResults, err := LoadAndExtractRelations(tmpDir, []string{"./..."})
+	fset := token.NewFileSet()
+	pkgResults, err := LoadAndExtractRelations(fset, tmpDir, []string{"./..."})
 	if err != nil {
 		t.Fatalf("LoadAndExtractRelations failed: %v", err)
 	}

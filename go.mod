@@ -2,12 +2,10 @@ module github.com/xhd2015/ormx
 
 go 1.22.0
 
-toolchain go1.23.6
-
 require (
-	github.com/xhd2015/less-gen v0.0.4
+	github.com/xhd2015/less-gen v0.0.5
 	github.com/xhd2015/xgo v1.1.7
-	golang.org/x/tools v0.25.0
+	golang.org/x/tools v0.21.0
 )
 
 require (
