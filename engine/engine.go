@@ -25,10 +25,10 @@ type Engine interface {
 	ExecInsert(ctx context.Context, sql string, args []interface{}) (int64, error)
 }
 
-// EngineGetter is a function that returns an Engine
-type EngineGetter func() Engine
+// Getter is a function that returns an Engine
+type Getter func() Engine
 
-// GetEngine returns the Engine
-func (f EngineGetter) GetEngine() Engine {
+// Get returns the Engine
+func (f Getter) GetEngine() Engine {
 	return f()
 }

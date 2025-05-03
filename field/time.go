@@ -109,14 +109,3 @@ func (f TimeField) Desc() OrderField {
 func (f TimeField) As(alias string) Field {
 	return As(f, alias)
 }
-
-// between represents a BETWEEN condition
-type between struct {
-	field Field
-	start interface{}
-	end   interface{}
-}
-
-func (b *between) ToSQL() (string, []interface{}, error) {
-	return b.field.ToSQL() + " BETWEEN ? AND ?", []interface{}{b.start, b.end}, nil
-}

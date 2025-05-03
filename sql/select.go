@@ -15,11 +15,6 @@ func Select(fields ...field.Field) *SelectBuilder {
 	}
 }
 
-// Or creates an OR condition from multiple conditions
-func Or(conditions ...field.Condition) field.Condition {
-	return field.Or(conditions...)
-}
-
 // Count creates a count expression
 func Count(f field.Field) AggregateFunc {
 	return AggregateFunc{
@@ -244,6 +239,9 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to build join condition: %w", err)
 		}
+		if joinSQL == "" {
+			continue
+		}
 		sqlBuilder.WriteString(joinSQL)
 		params = append(params, joinParams...)
 	}
@@ -252,13 +250,15 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 	if len(b.conditions) > 0 {
 		sqlBuilder.WriteString(" WHERE ")
 		for i, condition := range b.conditions {
-			if i > 0 {
-				sqlBuilder.WriteString(" AND ")
-			}
-
 			condSQL, condParams, err := condition.ToSQL()
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to build where condition: %w", err)
+			}
+			if condSQL == "" {
+				continue
+			}
+			if i > 0 {
+				sqlBuilder.WriteString(" AND ")
 			}
 			sqlBuilder.WriteString(condSQL)
 			params = append(params, condParams...)
@@ -287,6 +287,9 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 			condSQL, condParams, err := condition.ToSQL()
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to build having condition: %w", err)
+			}
+			if condSQL == "" {
+				continue
 			}
 			sqlBuilder.WriteString(condSQL)
 			params = append(params, condParams...)

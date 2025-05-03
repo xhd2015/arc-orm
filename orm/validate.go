@@ -242,6 +242,10 @@ func checkFieldTypeCompatibility(structType reflect.Type, tableField field.Field
 		if structType.Kind() != reflect.Int64 && structType.Kind() != reflect.Int {
 			return fmt.Errorf("expected int/int64 for Int64Field, got %s", structType.String())
 		}
+	case field.Int32Field:
+		if structType.Kind() != reflect.Int32 {
+			return fmt.Errorf("expected int32 for Int32Field, got %s", structType.String())
+		}
 	case field.StringField:
 		if structType.Kind() != reflect.String {
 			return fmt.Errorf("expected string for StringField, got %s", structType.String())
@@ -250,6 +254,10 @@ func checkFieldTypeCompatibility(structType reflect.Type, tableField field.Field
 		// Time is a struct, so check against time.Time type name
 		if structType.String() != "time.Time" {
 			return fmt.Errorf("expected time.Time for TimeField, got %s", structType.String())
+		}
+	case field.Float64Field:
+		if structType.Kind() != reflect.Float64 {
+			return fmt.Errorf("expected float64 for Float64Field, got %s", structType.String())
 		}
 	default:
 		return fmt.Errorf("unsupported table field type: %T", tableField)

@@ -10,8 +10,7 @@ import (
 	"github.com/xhd2015/xgo/support/goinfo"
 )
 
-const base = `
-package testorm
+const base = `package testorm
 
 import (
 	"time"
@@ -136,23 +135,22 @@ func TestGen_NoChange(t *testing.T) {
 	}
 
 	expectCode := base + `
-
 var ORM = orm.Bind[User, UserOptional](nil, Table)
 
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 
 type User struct {
-	Id int64
-	Name string
-	Email string
+	Id         int64
+	Name       string
+	Email      string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type UserOptional struct {
-	Id *int64
-	Name *string
-	Email *string
+	Id         *int64
+	Name       *string
+	Email      *string
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }
@@ -172,18 +170,19 @@ func TestGen_CreateModel(t *testing.T) {
 
 	// Expect the base code plus newly created User and UserOptional models
 	expectCode := base + `var ORM = orm.Bind[Testorm, TestormOptional](nil, Table)
+
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type Testorm struct {
-	Id int64
-	Name string
-	Email string
+	Id         int64
+	Name       string
+	Email      string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 type TestormOptional struct {
-	Id *int64
-	Name *string
-	Email *string
+	Id         *int64
+	Name       *string
+	Email      *string
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }
@@ -224,17 +223,17 @@ type UserOptional struct {
 
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type User struct {
-	Id int64
-	Name string
-	Email string
+	Id         int64
+	Name       string
+	Email      string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type UserOptional struct {
-	Id *int64
-	Name *string
-	Email *string
+	Id         *int64
+	Name       *string
+	Email      *string
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }
@@ -276,19 +275,20 @@ type UserOptional struct {
 	// The extra Age field should be removed in the generated code
 	// But comments are preserved
 	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
+
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type User struct {
-	Id int64
-	Name string
-	Email string
+	Id         int64
+	Name       string
+	Email      string
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type UserOptional struct {
-	Id *int64
-	Name *string
-	Email *string
+	Id         *int64
+	Name       *string
+	Email      *string
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }

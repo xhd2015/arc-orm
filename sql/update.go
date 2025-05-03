@@ -89,6 +89,9 @@ func (b *UpdateBuilder) SQL() (string, []interface{}, error) {
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to build where condition: %w", err)
 			}
+			if condSQL == "" {
+				continue
+			}
 
 			sqlBuilder.WriteString(condSQL)
 			params = append(params, condParams...)

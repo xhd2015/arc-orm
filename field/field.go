@@ -1,5 +1,7 @@
 package field
 
+import "strings"
+
 // Field interface represents a database field with a name and table
 type Field interface {
 	Name() string
@@ -67,29 +69,53 @@ type or struct {
 	conditions []Condition
 }
 
+type and struct {
+	conditions []Condition
+}
+
 // Or creates an OR condition from multiple conditions
 func Or(conditions ...Condition) Condition {
 	return &or{conditions: conditions}
 }
+func And(conditions ...Condition) Condition {
+	return &and{conditions: conditions}
+}
 
 func (o *or) ToSQL() (string, []interface{}, error) {
-	if len(o.conditions) == 0 {
-		return "1=1", nil, nil
+	return joinCodnitions(o.conditions, "OR")
+}
+
+func (a *and) ToSQL() (string, []interface{}, error) {
+	return joinCodnitions(a.conditions, "AND")
+}
+
+func joinCodnitions(conditions []Condition, op string) (string, []interface{}, error) {
+	if len(conditions) == 0 {
+		return "", nil, nil
 	}
 
-	sqlParts := make([]string, 0, len(o.conditions))
+	sqlParts := make([]string, 0, len(conditions))
 	params := make([]interface{}, 0)
 
-	for _, cond := range o.conditions {
+	for _, cond := range conditions {
 		sql, condParams, err := cond.ToSQL()
 		if err != nil {
 			return "", nil, err
 		}
+		if sql == "" {
+			continue
+		}
 		sqlParts = append(sqlParts, sql)
 		params = append(params, condParams...)
 	}
+	if len(sqlParts) == 0 {
+		return "", nil, nil
+	}
+	if len(sqlParts) == 1 {
+		return sqlParts[0], params, nil
+	}
 
-	return "(" + joinStrings(sqlParts, " OR ") + ")", params, nil
+	return "(" + strings.Join(sqlParts, " "+op+" ") + ")", params, nil
 }
 
 // Helper to join strings

@@ -239,6 +239,8 @@ func getStructType(name string) string {
 	switch name {
 	case "Int64":
 		return "int64"
+	case "Int32":
+		return "int32"
 	case "Time":
 		return "time.Time"
 	case "String":

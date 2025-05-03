@@ -19,7 +19,7 @@ Library:
 go get github.com/xhd2015/arc-orm
 ```
 
-`arc-orm gen`:
+ORM model generator `arc-orm gen`:
 ```sh
 # update ORM models according to defined fields
 go install github.com/xhd2015/arc-orm/cmd/arc-orm@latest
@@ -57,8 +57,10 @@ var (
     UpdateTime = Table.Time("update_time")
 )
 
-// Create an ORM instance for this table
-var ORM = orm.MustNew[User, UserOptional](engine.GetEngine(), Table)
+// bind ORM with model and table
+var ORM = orm.Bind[User, UserOptional](engine.Engine, Table)
+
+// the following two models can be automatically generated and updated
 
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 // User model that matches the table structure
@@ -106,8 +108,10 @@ var (
     UpdateTime = Table.Time("update_time")
 )
 
-// Create an ORM instance for this table
-var ORM = orm.MustNew[Post, PostOptional](engine.GetEngine(), Table)
+// bind ORM with model and table
+var ORM = orm.Bind[Post, PostOptional](engine.Engine, Table)
+
+// the following two models can be automatically generated and updated
 
 //go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 // Post model that matches the table structure
@@ -129,6 +133,25 @@ type PostOptional struct {
 }
 ```
 
+### Define Engine Adaptor
+```go
+package engine
+
+import "github.com/xhd2015/arc-orm/engine"
+
+var Engine = engine.Getter(get)
+
+var engineImpl engine.Engine
+
+func Init(impl engine.Engine) {
+	engineImpl = impl
+}
+
+func get() engine.Engine {
+	return engineImpl
+}
+```
+
 ### Query with ORM
 
 Once you've defined your table structure and created an ORM instance, you can use it to perform various database operations:
@@ -139,6 +162,7 @@ import (
     "log"
     "time"
     
+    "github.com/xhd2015/arc-orm/sql"
     "github.com/example/myapp/user"
     "github.com/example/myapp/post"
 )
@@ -332,7 +356,7 @@ deleteQuery, deleteArgs, err := sql.
 
 ## Integrate with ORMs
 
-This library focuses on building type-safe SQL queries, but doesn't handle query execution or result mapping. Here's how to integrate it with popular Go database libraries:
+This library focuses on building type-safe SQL queries, but doesn't handle query execution or result mapping. Here's how to integrate it with popular Go database query libraries:
 
 ### Standard database/sql
 
