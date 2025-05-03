@@ -8,11 +8,11 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/xhd2015/arc-orm/engine"
+	"github.com/xhd2015/arc-orm/field"
+	"github.com/xhd2015/arc-orm/sql"
+	"github.com/xhd2015/arc-orm/table"
 	"github.com/xhd2015/less-gen/strcase"
-	"github.com/xhd2015/ormx/engine"
-	"github.com/xhd2015/ormx/field"
-	"github.com/xhd2015/ormx/sql"
-	"github.com/xhd2015/ormx/table"
 )
 
 // ORM provides database operations for any model

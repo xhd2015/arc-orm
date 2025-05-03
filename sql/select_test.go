@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/xhd2015/ormx/field"
-	"github.com/xhd2015/ormx/table"
+	"github.com/xhd2015/arc-orm/field"
+	"github.com/xhd2015/arc-orm/table"
 )
 
 var userTable = table.New("users")

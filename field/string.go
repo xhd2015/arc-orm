@@ -30,6 +30,41 @@ func (f StringField) Eq(value string) Condition {
 	}
 }
 
+type noOp struct {
+}
+
+func (f noOp) ToSQL() (string, []interface{}, error) {
+	return "", nil, nil
+}
+
+func (f StringField) In(values ...string) Condition {
+	if len(values) == 0 {
+		panic("in requires non-empty values")
+	}
+	interfaceValues := make([]interface{}, len(values))
+	for i, v := range values {
+		interfaceValues[i] = v
+	}
+	return &inCondition{
+		field:  f,
+		values: interfaceValues,
+	}
+}
+
+func (f StringField) InOrEmpty(values ...string) Condition {
+	if len(values) == 0 {
+		return noOp{}
+	}
+	interfaceValues := make([]interface{}, len(values))
+	for i, v := range values {
+		interfaceValues[i] = v
+	}
+	return &inCondition{
+		field:  f,
+		values: interfaceValues,
+	}
+}
+
 // EqField creates an equality condition between two fields (field1 = field2)
 func (f StringField) EqField(other Field) Condition {
 	return &fieldComparison{
@@ -77,18 +112,6 @@ func (f StringField) EndsWith(value string) Condition {
 	return &like{
 		field: f,
 		value: "%" + value,
-	}
-}
-
-// In creates an IN condition (field IN (values))
-func (f StringField) In(values ...string) Condition {
-	interfaceValues := make([]interface{}, len(values))
-	for i, v := range values {
-		interfaceValues[i] = v
-	}
-	return &inCondition{
-		field:  f,
-		values: interfaceValues,
 	}
 }
 

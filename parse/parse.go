@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xhd2015/less-gen/go/gogen"
 	"github.com/xhd2015/less-gen/strcase"
 	"golang.org/x/tools/go/packages"
 )
@@ -15,16 +16,18 @@ import (
 type FieldInfo struct {
 	Name    string
 	Type    string
-	Tags    map[string]string
+	Tags    string
 	Pointer bool
 	Node    ast.Node `json:"-"`
 }
 
 // ModelInfo represents a model struct and its fields
 type ModelInfo struct {
-	Name   string
-	Fields []FieldInfo
-	Node   ast.Node `json:"-"`
+	Name       string
+	Fields     []FieldInfo
+	GenDecl    *ast.GenDecl    `json:"-"`
+	TypeSpec   *ast.TypeSpec   `json:"-"`
+	StructType *ast.StructType `json:"-"`
 }
 
 // FieldRelation represents a relation between a field and a column
@@ -55,15 +58,16 @@ type Package struct {
 
 // File represents a Go file containing ORM table relations
 type File struct {
-	AbsFile string
-	Tables  []*TableRelation
-	AST     *ast.File `json:"-"`
+	AbsFile     string
+	HasGenerate bool
+	Tables      []*TableRelation
+	AST         *ast.File `json:"-"`
 }
 
-// LoadAndExtractRelations loads Go packages from the specified directory with the given arguments
+// ScanRelations loads Go packages from the specified directory with the given arguments
 // and extracts table relations from orm.Bind calls.
 // Returns a slice of packages containing files with table relations.
-func LoadAndExtractRelations(fset *token.FileSet, dir string, args []string) ([]*Package, error) {
+func ScanRelations(fset *token.FileSet, dir string, args []string) ([]*Package, error) {
 	// Load packages
 	pkgs, err := packages.Load(&packages.Config{
 		Fset: fset,
@@ -85,6 +89,13 @@ func LoadAndExtractRelations(fset *token.FileSet, dir string, args []string) ([]
 		for _, file := range pkg.Syntax {
 			filePath := pkg.Fset.Position(file.Pos()).Filename
 			var tables []*TableRelation
+			var hasGenerate bool
+
+			// check go:generate
+			genCmds := gogen.FindGoGenerate(file.Comments, []string{"go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen", "go run github.com/xhd2015/arc-orm/cmd/arc-orm gen", "arc-orm gen"})
+			if len(genCmds) > 0 {
+				hasGenerate = true
+			}
 
 			// Process each declaration in the file
 			for _, decl := range file.Decls {
@@ -125,9 +136,10 @@ func LoadAndExtractRelations(fset *token.FileSet, dir string, args []string) ([]
 			// Only add file to the result if it has any relations
 			if len(tables) > 0 {
 				files = append(files, &File{
-					AbsFile: filePath,
-					Tables:  tables,
-					AST:     file,
+					AbsFile:     filePath,
+					HasGenerate: hasGenerate,
+					Tables:      tables,
+					AST:         file,
 				})
 			} else {
 				// no ORM found, find table
@@ -152,7 +164,8 @@ func LoadAndExtractRelations(fset *token.FileSet, dir string, args []string) ([]
 					fields := extractFieldRelations(pkg, tableVar)
 
 					files = append(files, &File{
-						AbsFile: filePath,
+						AbsFile:     filePath,
+						HasGenerate: hasGenerate,
 						Tables: []*TableRelation{{
 							TablVarName:   ident.Name,
 							TableName:     firstTable,
@@ -213,7 +226,7 @@ func tryExtractORMTableRelation(callExpr *ast.CallExpr, pkg *packages.Package) (
 	if !ok {
 		return nil, nil // Not a function, skip
 	}
-	if fnType.Name() != "Bind" || fnType.Pkg().Path() != "github.com/xhd2015/ormx/orm" {
+	if fnType.Name() != "Bind" || fnType.Pkg().Path() != "github.com/xhd2015/arc-orm/orm" {
 		return nil, nil // Not an orm.Bind call, skip
 	}
 
@@ -268,67 +281,73 @@ func findModelInfoByName(pkg *packages.Package, name string) ModelInfo {
 	info := ModelInfo{Name: name}
 
 	for _, file := range pkg.Syntax {
-		ast.Inspect(file, func(n ast.Node) bool {
-			typeSpec, ok := n.(*ast.TypeSpec)
-			if !ok || typeSpec.Name.Name != name {
-				return true
+		for _, decl := range file.Decls {
+			genDecl, ok := decl.(*ast.GenDecl)
+			if !ok || genDecl.Tok != token.TYPE {
+				continue
 			}
-
-			structType, ok := typeSpec.Type.(*ast.StructType)
-			if !ok {
-				return false
-			}
-
-			// Set the AST node for the model
-			info.Node = typeSpec
-
-			// Extract fields
-			for _, field := range structType.Fields.List {
-				if len(field.Names) == 0 {
-					continue // Skip embedded fields
+			for _, spec := range genDecl.Specs {
+				typeSpec, ok := spec.(*ast.TypeSpec)
+				if !ok || typeSpec.Name.Name != name {
+					continue
 				}
 
-				fieldName := field.Names[0].Name
-				var typeName string
-				var isPointer bool
+				structType, ok := typeSpec.Type.(*ast.StructType)
+				if !ok {
+					continue
+				}
 
-				// Get the type
-				switch t := field.Type.(type) {
-				case *ast.Ident:
-					typeName = t.Name
-				case *ast.SelectorExpr:
-					if x, ok := t.X.(*ast.Ident); ok {
-						typeName = x.Name + "." + t.Sel.Name
+				// Set the AST node for the model
+				info.GenDecl = genDecl
+				info.TypeSpec = typeSpec
+				info.StructType = structType
+
+				// Extract fields
+				for _, field := range structType.Fields.List {
+					if len(field.Names) == 0 {
+						continue // Skip embedded fields
 					}
-				case *ast.StarExpr:
-					isPointer = true
-					if ident, ok := t.X.(*ast.Ident); ok {
-						typeName = ident.Name
-					} else if sel, ok := t.X.(*ast.SelectorExpr); ok {
-						if x, ok := sel.X.(*ast.Ident); ok {
-							typeName = x.Name + "." + sel.Sel.Name
+
+					fieldName := field.Names[0].Name
+					var typeName string
+					var isPointer bool
+
+					// Get the type
+					switch t := field.Type.(type) {
+					case *ast.Ident:
+						typeName = t.Name
+					case *ast.SelectorExpr:
+						if x, ok := t.X.(*ast.Ident); ok {
+							typeName = x.Name + "." + t.Sel.Name
+						}
+					case *ast.StarExpr:
+						isPointer = true
+						if ident, ok := t.X.(*ast.Ident); ok {
+							typeName = ident.Name
+						} else if sel, ok := t.X.(*ast.SelectorExpr); ok {
+							if x, ok := sel.X.(*ast.Ident); ok {
+								typeName = x.Name + "." + sel.Sel.Name
+							}
 						}
 					}
-				}
+					var tag string
+					if field.Tag != nil {
+						tagVal := field.Tag.Value
+						if tagVal != "" && len(tagVal) >= 2 && strings.HasPrefix(tagVal, "`") && strings.HasSuffix(tagVal, "`") {
+							tag = tagVal[1 : len(tagVal)-1]
+						}
+					}
 
-				// Parse tags
-				tags := make(map[string]string)
-				if field.Tag != nil {
-					// We'd parse tags here in a production implementation
+					info.Fields = append(info.Fields, FieldInfo{
+						Name:    fieldName,
+						Type:    typeName,
+						Tags:    tag,
+						Pointer: isPointer,
+						Node:    field,
+					})
 				}
-
-				info.Fields = append(info.Fields, FieldInfo{
-					Name:    fieldName,
-					Type:    typeName,
-					Tags:    tags,
-					Pointer: isPointer,
-					Node:    field,
-				})
 			}
-
-			// We found the struct, no need to look further
-			return false
-		})
+		}
 	}
 
 	return info
@@ -350,7 +369,7 @@ func isPtrToORM(typ types.Type) bool {
 		return false
 	}
 
-	if typeName.Pkg().Path() != "github.com/xhd2015/ormx/orm" {
+	if typeName.Pkg().Path() != "github.com/xhd2015/arc-orm/orm" {
 		return false
 	}
 
@@ -418,7 +437,7 @@ func extractTableFromVarDef(typeInfo *types.Info, expr ast.Expr) string {
 		return ""
 	}
 	useFn := typeInfo.Uses[ident]
-	if useFn == nil || useFn.Name() != "New" || useFn.Pkg().Path() != "github.com/xhd2015/ormx/table" {
+	if useFn == nil || useFn.Name() != "New" || useFn.Pkg().Path() != "github.com/xhd2015/arc-orm/table" {
 		return ""
 	}
 
@@ -533,18 +552,10 @@ func extractModelInfo(expr ast.Expr, typeInfo *types.Info, pkg *packages.Package
 			isPointer = true
 		}
 
-		// Extract tags
-		tags := make(map[string]string)
-		if structType.Tag(i) != "" {
-			// Parse struct tags like `json:"name" db:"column_name"`
-			// This is a simplified version; in a real implementation, you'd use a proper tag parser
-			// TODO: parse tags properly
-		}
-
 		fieldInfo := FieldInfo{
 			Name:    field.Name(),
 			Type:    fieldType.String(),
-			Tags:    tags,
+			Tags:    structType.Tag(i),
 			Pointer: isPointer,
 			Node:    nil,
 		}

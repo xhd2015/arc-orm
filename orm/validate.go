@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/xhd2015/arc-orm/field"
+	"github.com/xhd2015/arc-orm/table"
 	"github.com/xhd2015/less-gen/strcase"
-	"github.com/xhd2015/ormx/field"
-	"github.com/xhd2015/ormx/table"
 )
 
 // Errors returned by validation

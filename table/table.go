@@ -1,7 +1,7 @@
 package table
 
 import (
-	"github.com/xhd2015/ormx/field"
+	"github.com/xhd2015/arc-orm/field"
 )
 
 // Table represents a database table

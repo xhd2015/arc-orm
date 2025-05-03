@@ -88,6 +88,14 @@ func (f Int64Field) Lte(value int64) Condition {
 	}
 }
 
+// IsNull creates an IS NULL condition (field IS NULL)
+func (f Int64Field) IsNull() Condition {
+	return &nullCondition{
+		field:  f,
+		isNull: true,
+	}
+}
+
 // In creates an IN condition (field IN (values))
 func (f Int64Field) In(values ...int64) Condition {
 	interfaceValues := make([]interface{}, len(values))
@@ -178,4 +186,17 @@ type fieldComparison struct {
 
 func (c *fieldComparison) ToSQL() (string, []interface{}, error) {
 	return c.left.ToSQL() + " " + c.op + " " + c.right.ToSQL(), nil, nil
+}
+
+// nullCondition represents an IS NULL or IS NOT NULL condition
+type nullCondition struct {
+	field  Field
+	isNull bool
+}
+
+func (c *nullCondition) ToSQL() (string, []interface{}, error) {
+	if c.isNull {
+		return c.field.ToSQL() + " IS NULL", nil, nil
+	}
+	return c.field.ToSQL() + " IS NOT NULL", nil, nil
 }

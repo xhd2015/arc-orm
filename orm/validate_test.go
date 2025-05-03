@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/xhd2015/arc-orm/engine"
+	"github.com/xhd2015/arc-orm/table"
 	"github.com/xhd2015/less-gen/strcase"
-	"github.com/xhd2015/ormx/engine"
-	"github.com/xhd2015/ormx/table"
 	"github.com/xhd2015/xgo/support/assert"
 )
 

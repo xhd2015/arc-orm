@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/xhd2015/ormx/example/user"
-	"github.com/xhd2015/ormx/sql"
+	"github.com/xhd2015/arc-orm/example/user"
+	"github.com/xhd2015/arc-orm/sql"
 )
 
 func TestUpdateExamples(t *testing.T) {

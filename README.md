@@ -1,6 +1,8 @@
-# ormx
+# arc-orm
 
-A type-safe SQL query builder for Go with compile-time type checking.
+A feature rich type-safe SQL query builder for Go with compile-time type checking.
+
+With a simple ORM binding model generator.
 
 ## Features
 
@@ -12,8 +14,16 @@ A type-safe SQL query builder for Go with compile-time type checking.
 
 ## Installation
 
-```bash
-go get github.com/xhd2015/ormx
+Library:
+```sh
+go get github.com/xhd2015/arc-orm
+```
+
+`arc-orm gen`:
+```sh
+# update ORM models according to defined fields
+go install github.com/xhd2015/arc-orm/cmd/arc-orm@latest
+arc-orm gen
 ```
 
 ## Usage
@@ -29,9 +39,9 @@ package user
 import (
     "time"
     
-    "github.com/xhd2015/ormx/example/engine"
-    "github.com/xhd2015/ormx/orm"
-    "github.com/xhd2015/ormx/table"
+    "github.com/xhd2015/arc-orm/example/engine"
+    "github.com/xhd2015/arc-orm/orm"
+    "github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the users table
@@ -50,6 +60,7 @@ var (
 // Create an ORM instance for this table
 var ORM = orm.MustNew[User, UserOptional](engine.GetEngine(), Table)
 
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 // User model that matches the table structure
 type User struct {
     Id         int64
@@ -78,9 +89,9 @@ package post
 import (
     "time"
     
-    "github.com/xhd2015/ormx/example/engine"
-    "github.com/xhd2015/ormx/orm"
-    "github.com/xhd2015/ormx/table"
+    "github.com/xhd2015/arc-orm/example/engine"
+    "github.com/xhd2015/arc-orm/orm"
+    "github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the posts table
@@ -98,6 +109,7 @@ var (
 // Create an ORM instance for this table
 var ORM = orm.MustNew[Post, PostOptional](engine.GetEngine(), Table)
 
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 // Post model that matches the table structure
 type Post struct {
     Id         int64
@@ -233,7 +245,7 @@ import (
     
     "github.com/example/myapp/user"
     "github.com/example/myapp/post"
-    "github.com/xhd2015/ormx/sql"
+    "github.com/xhd2015/arc-orm/sql"
 )
 
 func queryActiveUserPosts(ctx context.Context, userID int64, limit int) ([]*post.Post, error) {
@@ -268,7 +280,7 @@ This approach allows you to leverage both the type safety of the SQL builder and
 ```go
 // Import the table definition packages
 import (
-    "github.com/xhd2015/ormx/sql"
+    "github.com/xhd2015/arc-orm/sql"
     "github.com/example/myapp/user"
     "github.com/example/myapp/post"
 )

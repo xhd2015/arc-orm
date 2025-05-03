@@ -8,9 +8,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/xhd2015/arc-orm/parse"
+	"github.com/xhd2015/less-gen/go/gofmt"
 	"github.com/xhd2015/less-gen/go/gostruct"
 	"github.com/xhd2015/less-gen/strcase"
-	"github.com/xhd2015/ormx/parse"
 	"github.com/xhd2015/xgo/support/edit/goedit"
 	"github.com/xhd2015/xgo/support/goinfo"
 )
@@ -70,10 +71,6 @@ func gen(args []string) error {
 		remainArgs = append(remainArgs, arg)
 	}
 
-	// if len(args) == 0 {
-	// 	return fmt.Errorf("requires table name, run `ormx gen <table_name>`")
-	// }
-	// TODO:
 	var loadDir string
 	var loadArgs []string
 	if len(remainArgs) == 0 {
@@ -112,25 +109,43 @@ func gen(args []string) error {
 
 	// Load the packages and extract table relations
 	fset := token.NewFileSet()
-	pkgs, err := parse.LoadAndExtractRelations(fset, loadDir, loadArgs)
+	pkgs, err := parse.ScanRelations(fset, loadDir, loadArgs)
 	if err != nil {
 		return err
 	}
 
 	for _, pkg := range pkgs {
 		for _, file := range pkg.Files {
-			content, err := os.ReadFile(file.AbsFile)
+			code, err := os.ReadFile(file.AbsFile)
 			if err != nil {
 				return err
 			}
-			edit := goedit.NewWithBytes(fset, content)
-			for _, table := range file.Tables {
-				amendModels(edit, file, table)
+			edit := goedit.NewWithBytes(fset, code)
+			for i, table := range file.Tables {
+				if table.NeedCreateORM {
+					// var ORM = orm.Bind[table.Model, table.OptionalModel](nil, table.TableName)
+					declare := fmt.Sprintf("\nvar ORM = orm.Bind[%s, %s](nil, %s)", table.Model.Name, table.OptionalModel.Name, table.TablVarName)
+					pos, newLine := getMinAppendPos(file, table)
+					if newLine {
+						declare += "\n"
+					}
+					edit.Insert(pos, declare)
+				}
+				if !file.HasGenerate && i == 0 {
+					declare := "\n//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen"
+					pos, newLine := getMinAppendPos(file, table)
+					if newLine {
+						declare += "\n"
+					}
+					edit.Insert(pos, declare)
+				}
+				amendModels(edit, file, code, table)
 			}
 			if !edit.HasEdit() {
 				continue
 			}
 			newCode := edit.Buffer().Bytes()
+			newCode = []byte(gofmt.TryFormatCode(string(newCode)))
 			err = os.WriteFile(file.AbsFile, newCode, 0644)
 			if err != nil {
 				return err
@@ -141,25 +156,47 @@ func gen(args []string) error {
 	return nil
 }
 
-func amendModels(edit *goedit.Edit, file *parse.File, table *parse.TableRelation) {
-	if table.NeedCreateORM {
-		// var ORM = orm.Bind[table.Model, table.OptionalModel](nil, table.TableName)
-		edit.Insert(file.AST.End(), fmt.Sprintf("\nvar ORM = orm.Bind[%s, %s](nil, %s)", table.Model.Name, table.OptionalModel.Name, table.TablVarName))
+func getMinAppendPos(file *parse.File, table *parse.TableRelation) (token.Pos, bool) {
+	minDeclPos := token.NoPos
+	if table.Model.GenDecl != nil {
+		minDeclPos = table.Model.GenDecl.Pos()
+		// p = minPos(p, table.Model.GenDecl.Pos())
 	}
-	updateStructFields(edit, file, table, table.Model, table.Fields, table.Model.Fields, false)
-	updateStructFields(edit, file, table, table.OptionalModel, table.Fields, table.OptionalModel.Fields, true)
+	if table.OptionalModel.GenDecl != nil {
+		minDeclPos = minPos(minDeclPos, table.OptionalModel.GenDecl.Pos())
+	}
+	if minDeclPos.IsValid() {
+		return minDeclPos, true
+	}
+	return file.AST.End(), false
+}
+
+func minPos(a token.Pos, b token.Pos) token.Pos {
+	if !a.IsValid() {
+		return b
+	}
+	if !b.IsValid() {
+		return a
+	}
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func amendModels(edit *goedit.Edit, file *parse.File, code []byte, table *parse.TableRelation) {
+	updateStructFields(edit, file, code, table, table.Model, table.Fields, table.Model.Fields, false)
+	updateStructFields(edit, file, code, table, table.OptionalModel, table.Fields, table.OptionalModel.Fields, true)
 }
 
 // updateStructFields checks and updates struct fields to match the table field definitions
-func updateStructFields(edit *goedit.Edit, file *parse.File, table *parse.TableRelation, model parse.ModelInfo, tableFields []parse.FieldRelation, structFields []parse.FieldInfo, asPointer bool) {
+func updateStructFields(edit *goedit.Edit, file *parse.File, code []byte, table *parse.TableRelation, model parse.ModelInfo, tableFields []parse.FieldRelation, structFields []parse.FieldInfo, asPointer bool) {
 	var structTypeName string
 	var structType *ast.StructType
-	if typeSpec, ok := model.Node.(*ast.TypeSpec); ok {
-		if st, ok := typeSpec.Type.(*ast.StructType); ok {
-			structTypeName = typeSpec.Name.Name
-			structType = st
-		}
+	if model.TypeSpec != nil && model.TypeSpec.Name != nil {
+		structTypeName = model.TypeSpec.Name.Name
 	}
+	structType = model.StructType
 
 	current := gostruct.ParseStruct(structType, structTypeName)
 
@@ -189,14 +226,12 @@ func updateStructFields(edit *goedit.Edit, file *parse.File, table *parse.TableR
 	// Merge the structs
 	result := gostruct.MergeStructs(current, desired, reserveFields)
 
-	if model.Node != nil {
-		edit.Replace(model.Node.Pos(), model.Node.End(), result.Format(gostruct.FormatOptions{
+	if model.TypeSpec != nil {
+		edit.Replace(model.TypeSpec.Pos(), model.TypeSpec.End(), result.Format(gostruct.FormatOptions{
 			NoPrefixType: true,
 		}))
 	} else {
-		edit.Insert(file.AST.End(), "\n"+result.Format(gostruct.FormatOptions{
-			NoPrefixType: false,
-		}))
+		edit.Insert(file.AST.End(), "\n"+result.Format(gostruct.FormatOptions{}))
 	}
 }
 

@@ -3,9 +3,9 @@ package post
 import (
 	"time"
 
-	"github.com/xhd2015/ormx/example/engine"
-	"github.com/xhd2015/ormx/orm"
-	"github.com/xhd2015/ormx/table"
+	"github.com/xhd2015/arc-orm/example/engine"
+	"github.com/xhd2015/arc-orm/orm"
+	"github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the posts table
@@ -22,18 +22,19 @@ var (
 
 var ORM = orm.Bind[Post, PostOptional](engine.GetEngine(), Table)
 
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type Post struct {
-	Id int64
-	Title string
-	UserId int64
+	Id         int64
+	Title      string
+	UserId     int64
 	CreateTime time.Time
 	UpdateTime time.Time
 }
 
 type PostOptional struct {
-	Id *int64
-	Title *string
-	UserId *int64
+	Id         *int64
+	Title      *string
+	UserId     *int64
 	CreateTime *time.Time
 	UpdateTime *time.Time
 }

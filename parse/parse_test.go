@@ -230,9 +230,9 @@ func setupTestDir(t *testing.T) string {
 
 go 1.19
 
-require github.com/xhd2015/ormx v0.0.0
+require github.com/xhd2015/arc-orm v0.0.0
 
-replace github.com/xhd2015/ormx => `+projectRoot+`
+replace github.com/xhd2015/arc-orm => `+projectRoot+`
 `), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write go.mod: %v", err)
@@ -244,8 +244,8 @@ replace github.com/xhd2015/ormx => `+projectRoot+`
 import (
 	"time"
 
-	"github.com/xhd2015/ormx/orm"
-	"github.com/xhd2015/ormx/table"
+	"github.com/xhd2015/arc-orm/orm"
+	"github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the test_users table
@@ -300,7 +300,7 @@ func TestLoadAndExtractRelations(t *testing.T) {
 
 	// Call LoadAndExtractRelations
 	fset := token.NewFileSet()
-	pkgResults, err := LoadAndExtractRelations(fset, tmpDir, []string{"./..."})
+	pkgResults, err := ScanRelations(fset, tmpDir, []string{"./..."})
 	if err != nil {
 		t.Fatalf("LoadAndExtractRelations failed: %v", err)
 	}
@@ -355,7 +355,7 @@ func TestLoadAndExtractRelations(t *testing.T) {
 			}
 
 			// Verify the AST nodes are set
-			if rel.Model.Node == nil {
+			if rel.Model.StructType == nil {
 				t.Error("Model Node is nil")
 			}
 

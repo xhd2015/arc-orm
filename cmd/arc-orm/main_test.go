@@ -16,8 +16,8 @@ package testorm
 import (
 	"time"
 
-	"github.com/xhd2015/ormx/orm"
-	"github.com/xhd2015/ormx/table"
+	"github.com/xhd2015/arc-orm/orm"
+	"github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the test_users table
@@ -36,6 +36,8 @@ var (
 const FullDefiniton = `
 
 var ORM = orm.Bind[User, UserOptional](nil, Table)
+
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 
 type User struct {
 	Id         int64
@@ -83,9 +85,9 @@ func setupTestDir(t *testing.T, inputCode string) (dir string, file string) {
 
 go 1.19
 
-require github.com/xhd2015/ormx v0.0.0
+require github.com/xhd2015/arc-orm v0.0.0
 
-replace github.com/xhd2015/ormx => `+projectRoot+`
+replace github.com/xhd2015/arc-orm => `+projectRoot+`
 `), 0644)
 	if err != nil {
 		t.Fatalf("Failed to write go.mod: %v", err)
@@ -137,6 +139,8 @@ func TestGen_NoChange(t *testing.T) {
 
 var ORM = orm.Bind[User, UserOptional](nil, Table)
 
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+
 type User struct {
 	Id int64
 	Name string
@@ -168,6 +172,7 @@ func TestGen_CreateModel(t *testing.T) {
 
 	// Expect the base code plus newly created User and UserOptional models
 	expectCode := base + `var ORM = orm.Bind[Testorm, TestormOptional](nil, Table)
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type Testorm struct {
 	Id int64
 	Name string
@@ -216,6 +221,8 @@ type UserOptional struct {
 	}
 
 	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
+
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type User struct {
 	Id int64
 	Name string
@@ -242,6 +249,7 @@ type UserOptional struct {
 func TestGen_RemoveExtraField(t *testing.T) {
 	// Define User with an extra Age field that is not in the Table definition
 	codeWithExtraField := `var ORM = orm.Bind[User, UserOptional](nil, Table)
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type User struct {
 	Id         int64
 	Name       string
@@ -268,6 +276,7 @@ type UserOptional struct {
 	// The extra Age field should be removed in the generated code
 	// But comments are preserved
 	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type User struct {
 	Id int64
 	Name string

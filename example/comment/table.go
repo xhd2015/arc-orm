@@ -3,9 +3,9 @@ package comment
 import (
 	"time"
 
-	"github.com/xhd2015/ormx/example/engine"
-	"github.com/xhd2015/ormx/orm"
-	"github.com/xhd2015/ormx/table"
+	"github.com/xhd2015/arc-orm/example/engine"
+	"github.com/xhd2015/arc-orm/orm"
+	"github.com/xhd2015/arc-orm/table"
 )
 
 // Table is the comments table
@@ -23,6 +23,7 @@ var (
 	UpdateTime = Table.Time("update_time")
 )
 
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
 type Comment struct {
 	Id         int64
 	Content    string

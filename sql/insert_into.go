@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/xhd2015/ormx/field"
+	"github.com/xhd2015/arc-orm/field"
 )
 
 // InsertInto creates a new InsertIntoBuilder for the given table

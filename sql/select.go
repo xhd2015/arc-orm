@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/xhd2015/ormx/field"
+	"github.com/xhd2015/arc-orm/field"
 )
 
 // Select creates a new SelectBuilder with the given fields

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/xhd2015/ormx/field"
+	"github.com/xhd2015/arc-orm/field"
 )
 
 // Update creates a new UpdateBuilder for the given table

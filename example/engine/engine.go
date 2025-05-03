@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/xhd2015/ormx/engine"
+import "github.com/xhd2015/arc-orm/engine"
 
 type ExampleEngine struct {
 	engine.Engine
