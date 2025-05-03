@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/xhd2015/arc-orm/parse"
+	"github.com/xhd2015/arc-orm/cmd/arc-orm/parse"
 	"github.com/xhd2015/less-gen/go/gofmt"
 	"github.com/xhd2015/less-gen/go/gostruct"
 	"github.com/xhd2015/less-gen/strcase"
@@ -21,6 +21,7 @@ Usage: ormx <command>
 
 Commands:
   gen     generate models
+  sync    sync models, same as gen
 
 `
 
@@ -34,18 +35,18 @@ func main() {
 
 func handle(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("requires command, run `ormx help`")
+		return fmt.Errorf("requires command, run `arc-orm help`")
 	}
 
 	switch args[0] {
 	case "help":
 		fmt.Println(strings.TrimPrefix(help, "\n"))
 		return nil
-	case "gen":
+	case "gen", "sync":
 		return gen(args[1:])
 	}
 
-	return fmt.Errorf("unknown command, run `ormx help`")
+	return fmt.Errorf("unknown command, run `arc-orm help`")
 }
 
 func gen(args []string) error {
@@ -132,7 +133,7 @@ func gen(args []string) error {
 					edit.Insert(pos, declare)
 				}
 				if !file.HasGenerate && i == 0 {
-					declare := "\n//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen"
+					declare := "\n//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync"
 					pos, newLine := getMinAppendPos(file, table)
 					if newLine {
 						declare += "\n"
@@ -198,7 +199,7 @@ func updateStructFields(edit *goedit.Edit, file *parse.File, code []byte, table 
 	}
 	structType = model.StructType
 
-	current := gostruct.ParseStruct(structType, structTypeName)
+	current := gostruct.ParseStruct(edit.Fset(), structType, structTypeName)
 
 	// Create desired fields from table fields
 	var desiredFields []gostruct.FieldDef

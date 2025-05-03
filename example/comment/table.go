@@ -23,7 +23,7 @@ var (
 	UpdateTime = Table.Time("update_time")
 )
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type Comment struct {
 	Id         int64
 	Content    string

@@ -233,17 +233,16 @@ func getFieldName(field reflect.StructField) string {
 
 // checkFieldTypeCompatibility checks if a struct field type is compatible with a table field
 func checkFieldTypeCompatibility(structType reflect.Type, tableField field.Field) error {
-	// This is a simplified check, in a real implementation you would:
 	// 1. Check if the Go type is compatible with the database type
 	// 2. Handle conversions between related types (e.g. int64 and int)
-
+	// NOTE: DB int can be converted to bool
 	switch tableField.(type) {
 	case field.Int64Field:
-		if structType.Kind() != reflect.Int64 && structType.Kind() != reflect.Int {
+		if structType.Kind() != reflect.Int64 && structType.Kind() != reflect.Int && structType.Kind() != reflect.Bool {
 			return fmt.Errorf("expected int/int64 for Int64Field, got %s", structType.String())
 		}
 	case field.Int32Field:
-		if structType.Kind() != reflect.Int32 {
+		if structType.Kind() != reflect.Int32 && structType.Kind() != reflect.Int && structType.Kind() != reflect.Bool {
 			return fmt.Errorf("expected int32 for Int32Field, got %s", structType.String())
 		}
 	case field.StringField:

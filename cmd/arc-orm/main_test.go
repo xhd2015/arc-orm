@@ -36,7 +36,7 @@ const FullDefiniton = `
 
 var ORM = orm.Bind[User, UserOptional](nil, Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 
 type User struct {
 	Id         int64
@@ -137,7 +137,7 @@ func TestGen_NoChange(t *testing.T) {
 	expectCode := base + `
 var ORM = orm.Bind[User, UserOptional](nil, Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 
 type User struct {
 	Id         int64
@@ -171,7 +171,7 @@ func TestGen_CreateModel(t *testing.T) {
 	// Expect the base code plus newly created User and UserOptional models
 	expectCode := base + `var ORM = orm.Bind[Testorm, TestormOptional](nil, Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type Testorm struct {
 	Id         int64
 	Name       string
@@ -221,7 +221,7 @@ type UserOptional struct {
 
 	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type User struct {
 	Id         int64
 	Name       string
@@ -248,7 +248,7 @@ type UserOptional struct {
 func TestGen_RemoveExtraField(t *testing.T) {
 	// Define User with an extra Age field that is not in the Table definition
 	codeWithExtraField := `var ORM = orm.Bind[User, UserOptional](nil, Table)
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type User struct {
 	Id         int64
 	Name       string
@@ -276,7 +276,7 @@ type UserOptional struct {
 	// But comments are preserved
 	want := base + `var ORM = orm.Bind[User, UserOptional](nil, Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type User struct {
 	Id         int64
 	Name       string

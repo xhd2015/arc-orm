@@ -38,6 +38,16 @@ func (t *Table) Int64(name string) field.Int64Field {
 	return f
 }
 
+// Int32 creates a new Int32Field for this table
+func (t *Table) Int32(name string) field.Int32Field {
+	f := field.Int32Field{
+		FieldName: name,
+		TableName: t.name,
+	}
+	t.fields = append(t.fields, f)
+	return f
+}
+
 // Float64 creates a new Float64Field for this table
 func (t *Table) Float64(name string) field.Float64Field {
 	f := field.Float64Field{

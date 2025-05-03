@@ -23,7 +23,7 @@ var (
 
 var ORM = orm.Bind[User, UserOptional](engine.GetEngine(), Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type User struct {
 	Id         int64
 	Name       string

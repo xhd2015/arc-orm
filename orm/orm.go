@@ -239,23 +239,33 @@ func (o *ORM[T, P]) Count(ctx context.Context, query string, args []interface{})
 
 // UpdateByID updates an existing record by ID with partial fields
 func (o *ORM[T, P]) UpdateByID(ctx context.Context, id int64, data *P) error {
-	if id == 0 {
-		return fmt.Errorf("requires id, got 0")
+	idCondition, err := o.toIDCondition(id)
+	if err != nil {
+		return fmt.Errorf("failed to convert id to condition: %w", err)
 	}
+
+	return o.update(ctx, []field.Condition{idCondition}, data)
+}
+
+func (o *ORM[T, P]) UpdateBy(ctx context.Context, condition *P, data *P) error {
+	if condition == nil {
+		return fmt.Errorf("requires condition")
+	}
+
+	sqlConditions, err := o.ToConditions(condition)
+	if err != nil {
+		return fmt.Errorf("failed to convert condition to SQL conditions: %w", err)
+	}
+
+	return o.update(ctx, sqlConditions, data)
+}
+
+func (o *ORM[T, P]) update(ctx context.Context, conditions []field.Condition, data *P) error {
 	if data == nil {
 		return fmt.Errorf("requires data, got nil")
 	}
-
-	// Validate that the table has an 'id' field
-	hasIDField := false
-	for _, f := range o.table.Fields() {
-		if f.Name() == "id" {
-			hasIDField = true
-			break
-		}
-	}
-	if !hasIDField {
-		return ErrMissingIDField
+	if len(conditions) == 0 {
+		return fmt.Errorf("requires conditions")
 	}
 
 	// Create the SQL Update builder
@@ -332,11 +342,9 @@ func (o *ORM[T, P]) UpdateByID(ctx context.Context, id int64, data *P) error {
 		case reflect.String:
 			sqlValue = sql.String(fieldValue.(string))
 		case reflect.Int, reflect.Int64:
-			if i64, ok := fieldValue.(int64); ok {
-				sqlValue = sql.Int64(i64)
-			} else if i, ok := fieldValue.(int); ok {
-				sqlValue = sql.Int64(int64(i))
-			}
+			sqlValue = sql.Int64(fieldRValue.Int())
+		case reflect.Int32:
+			sqlValue = sql.Int32(fieldRValue.Int())
 		case reflect.Float64:
 			sqlValue = sql.Float64(fieldValue.(float64))
 		case reflect.Bool:
@@ -368,15 +376,8 @@ func (o *ORM[T, P]) UpdateByID(ctx context.Context, id int64, data *P) error {
 		builder.Set(updateTimeField, sql.Time(time.Now()))
 	}
 
-	// Create a field specifically for the ID condition
-	// Use an Int64Field with empty TableName so it outputs just `id`
-	idField := field.Int64Field{
-		FieldName: "id",
-		// TableName is intentionally left empty to get just `id` rather than `table`.`id`
-	}
-
 	// Add WHERE clause for ID
-	builder.Where(idField.Eq(id))
+	builder.Where(conditions...)
 
 	// Generate the SQL and args
 	query, args, err := builder.SQL()
@@ -395,31 +396,36 @@ func (o *ORM[T, P]) UpdateByID(ctx context.Context, id int64, data *P) error {
 
 // DeleteByID deletes a record by its ID
 func (o *ORM[T, P]) DeleteByID(ctx context.Context, id int64) error {
-	if id == 0 {
-		return fmt.Errorf("requires id, got 0")
+	idCondition, err := o.toIDCondition(id)
+	if err != nil {
+		return fmt.Errorf("failed to convert id to condition: %w", err)
 	}
 
-	// Validate that the table has an 'id' field
-	hasIDField := false
-	for _, f := range o.table.Fields() {
-		if f.Name() == "id" {
-			hasIDField = true
-			break
-		}
-	}
-	if !hasIDField {
-		return ErrMissingIDField
+	return o.deleteBy(ctx, []field.Condition{idCondition})
+}
+
+// DeleteByID deletes a record by its ID
+func (o *ORM[T, P]) DeleteBy(ctx context.Context, condition *P) error {
+	if condition == nil {
+		return fmt.Errorf("requires condition")
 	}
 
-	// Create a field specifically for the ID condition
-	// Use an Int64Field with empty TableName so it outputs just `id`
-	idField := field.Int64Field{
-		FieldName: "id",
+	sqlConditions, err := o.ToConditions(condition)
+	if err != nil {
+		return fmt.Errorf("failed to convert condition to SQL conditions: %w", err)
+	}
+
+	return o.deleteBy(ctx, sqlConditions)
+}
+
+func (o *ORM[T, P]) deleteBy(ctx context.Context, conditions []field.Condition) error {
+	if len(conditions) == 0 {
+		return fmt.Errorf("requires conditions")
 	}
 
 	// Create the SQL Delete builder
 	query, args, err := sql.DeleteFrom(o.table.Name()).
-		Where(idField.Eq(id)).
+		Where(conditions...).
 		SQL()
 
 	if err != nil {

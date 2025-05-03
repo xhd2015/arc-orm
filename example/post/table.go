@@ -22,7 +22,7 @@ var (
 
 var ORM = orm.Bind[Post, PostOptional](engine.GetEngine(), Table)
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 type Post struct {
 	Id         int64
 	Title      string

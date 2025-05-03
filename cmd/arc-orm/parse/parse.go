@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/xhd2015/less-gen/go/gogen"
+	"github.com/xhd2015/less-gen/go/gostruct"
 	"github.com/xhd2015/less-gen/strcase"
 	"golang.org/x/tools/go/packages"
 )
@@ -92,7 +93,12 @@ func ScanRelations(fset *token.FileSet, dir string, args []string) ([]*Package, 
 			var hasGenerate bool
 
 			// check go:generate
-			genCmds := gogen.FindGoGenerate(file.Comments, []string{"go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen", "go run github.com/xhd2015/arc-orm/cmd/arc-orm gen", "arc-orm gen"})
+			genCmds := gogen.FindGoGenerate(file.Comments, []string{
+				"go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen",
+				"go run github.com/xhd2015/arc-orm/cmd/arc-orm gen", "arc-orm gen",
+				"go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync",
+				"go run github.com/xhd2015/arc-orm/cmd/arc-orm sync", "arc-orm sync",
+			})
 			if len(genCmds) > 0 {
 				hasGenerate = true
 			}
@@ -332,10 +338,7 @@ func findModelInfoByName(pkg *packages.Package, name string) ModelInfo {
 					}
 					var tag string
 					if field.Tag != nil {
-						tagVal := field.Tag.Value
-						if tagVal != "" && len(tagVal) >= 2 && strings.HasPrefix(tagVal, "`") && strings.HasSuffix(tagVal, "`") {
-							tag = tagVal[1 : len(tagVal)-1]
-						}
+						tag = gostruct.ParseTag(field.Tag.Value)
 					}
 
 					info.Fields = append(info.Fields, FieldInfo{

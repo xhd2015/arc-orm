@@ -18,6 +18,13 @@ func (i Int64) ToExpressionSQL() (string, interface{}) {
 	return "", int64(i)
 }
 
+type Int32 int32
+
+// ToExpressionSQL returns the SQL for an int32 literal
+func (i Int32) ToExpressionSQL() (string, interface{}) {
+	return "", int32(i)
+}
+
 // Float64 is a float64 literal expression for use in SQL statements
 type Float64 float64
 

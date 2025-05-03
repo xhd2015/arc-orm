@@ -19,11 +19,11 @@ Library:
 go get github.com/xhd2015/arc-orm
 ```
 
-ORM model generator `arc-orm gen`:
+ORM model generator `arc-orm sync`:
 ```sh
-# update ORM models according to defined fields
+# generate or update ORM models according to defined fields
 go install github.com/xhd2015/arc-orm/cmd/arc-orm@latest
-arc-orm gen
+arc-orm sync
 ```
 
 ## Usage
@@ -62,7 +62,7 @@ var ORM = orm.Bind[User, UserOptional](engine.Engine, Table)
 
 // the following two models can be automatically generated and updated
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 // User model that matches the table structure
 type User struct {
     Id         int64
@@ -113,7 +113,7 @@ var ORM = orm.Bind[Post, PostOptional](engine.Engine, Table)
 
 // the following two models can be automatically generated and updated
 
-//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest gen
+//go:generate go run github.com/xhd2015/arc-orm/cmd/arc-orm@latest sync
 // Post model that matches the table structure
 type Post struct {
     Id         int64
