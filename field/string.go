@@ -93,6 +93,9 @@ func (f StringField) Like(value string) Condition {
 
 // Contains creates a LIKE condition with wildcards (field LIKE %value%)
 func (f StringField) Contains(value string) Condition {
+	if value == "" {
+		return noOp{}
+	}
 	return &like{
 		field: f,
 		value: "%" + value + "%",
@@ -101,6 +104,9 @@ func (f StringField) Contains(value string) Condition {
 
 // StartsWith creates a LIKE condition with wildcard (field LIKE value%)
 func (f StringField) StartsWith(value string) Condition {
+	if value == "" {
+		return noOp{}
+	}
 	return &like{
 		field: f,
 		value: value + "%",
@@ -109,6 +115,9 @@ func (f StringField) StartsWith(value string) Condition {
 
 // EndsWith creates a LIKE condition with wildcard (field LIKE %value)
 func (f StringField) EndsWith(value string) Condition {
+	if value == "" {
+		return noOp{}
+	}
 	return &like{
 		field: f,
 		value: "%" + value,
