@@ -30,6 +30,42 @@ func (f StringField) Eq(value string) Condition {
 	}
 }
 
+// Lte creates a less than or equal to condition (field <= value)
+func (f StringField) Lte(value string) Condition {
+	return &comparison{
+		field: f,
+		op:    "<=",
+		value: value,
+	}
+}
+
+// Lt creates a less than condition (field < value)
+func (f StringField) Lt(value string) Condition {
+	return &comparison{
+		field: f,
+		op:    "<",
+		value: value,
+	}
+}
+
+// Gte creates a greater than or equal to condition (field >= value)
+func (f StringField) Gte(value string) Condition {
+	return &comparison{
+		field: f,
+		op:    ">=",
+		value: value,
+	}
+}
+
+// Gt creates a greater than condition (field > value)
+func (f StringField) Gt(value string) Condition {
+	return &comparison{
+		field: f,
+		op:    ">",
+		value: value,
+	}
+}
+
 type noOp struct {
 }
 
