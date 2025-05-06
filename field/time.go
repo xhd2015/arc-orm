@@ -1,7 +1,5 @@
 package field
 
-import "time"
-
 // TimeField represents a time.Time database field
 type TimeField struct {
 	FieldName string
@@ -24,7 +22,7 @@ func (f TimeField) ToSQL() string {
 }
 
 // Eq creates an equality condition (field = value)
-func (f TimeField) Eq(value time.Time) Condition {
+func (f TimeField) Eq(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    "=",
@@ -42,7 +40,7 @@ func (f TimeField) EqField(other Field) Condition {
 }
 
 // Neq creates a not equal condition (field != value)
-func (f TimeField) Neq(value time.Time) Condition {
+func (f TimeField) Neq(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    "!=",
@@ -51,7 +49,7 @@ func (f TimeField) Neq(value time.Time) Condition {
 }
 
 // Gt creates a greater than condition (field > value)
-func (f TimeField) Gt(value time.Time) Condition {
+func (f TimeField) Gt(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    ">",
@@ -60,7 +58,7 @@ func (f TimeField) Gt(value time.Time) Condition {
 }
 
 // Gte creates a greater than or equal condition (field >= value)
-func (f TimeField) Gte(value time.Time) Condition {
+func (f TimeField) Gte(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    ">=",
@@ -69,7 +67,7 @@ func (f TimeField) Gte(value time.Time) Condition {
 }
 
 // Lt creates a less than condition (field < value)
-func (f TimeField) Lt(value time.Time) Condition {
+func (f TimeField) Lt(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    "<",
@@ -78,7 +76,7 @@ func (f TimeField) Lt(value time.Time) Condition {
 }
 
 // Lte creates a less than or equal condition (field <= value)
-func (f TimeField) Lte(value time.Time) Condition {
+func (f TimeField) Lte(value string) Condition {
 	return &comparison{
 		field: f,
 		op:    "<=",
@@ -87,7 +85,7 @@ func (f TimeField) Lte(value time.Time) Condition {
 }
 
 // Between creates a BETWEEN condition
-func (f TimeField) Between(start, end time.Time) Condition {
+func (f TimeField) Between(start string, end string) Condition {
 	return &between{
 		field: f,
 		start: start,
