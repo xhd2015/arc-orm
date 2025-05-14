@@ -91,14 +91,7 @@ func (f StringField) InOrEmpty(values ...string) Condition {
 	if len(values) == 0 {
 		return noOp{}
 	}
-	interfaceValues := make([]interface{}, len(values))
-	for i, v := range values {
-		interfaceValues[i] = v
-	}
-	return &inCondition{
-		field:  f,
-		values: interfaceValues,
-	}
+	return f.In(values...)
 }
 
 // EqField creates an equality condition between two fields (field1 = field2)

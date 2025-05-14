@@ -340,15 +340,15 @@ func (o *ORM[T, P]) update(ctx context.Context, conditions []field.Condition, da
 
 		switch fieldRValue.Kind() {
 		case reflect.String:
-			sqlValue = sql.String(fieldValue.(string))
+			sqlValue = sql.String(fieldRValue.String())
 		case reflect.Int, reflect.Int64:
 			sqlValue = sql.Int64(fieldRValue.Int())
 		case reflect.Int32:
 			sqlValue = sql.Int32(fieldRValue.Int())
 		case reflect.Float64:
-			sqlValue = sql.Float64(fieldValue.(float64))
+			sqlValue = sql.Float64(fieldRValue.Float())
 		case reflect.Bool:
-			sqlValue = sql.Bool(fieldValue.(bool))
+			sqlValue = sql.Bool(fieldRValue.Bool())
 		case reflect.Struct:
 			// Handle time.Time specially
 			if t, ok := fieldValue.(time.Time); ok {

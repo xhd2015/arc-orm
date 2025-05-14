@@ -108,6 +108,14 @@ func (f Int32Field) In(values ...int32) Condition {
 	}
 }
 
+// InOrEmpty creates an IN condition (field IN (values))
+func (f Int32Field) InOrEmpty(values ...int32) Condition {
+	if len(values) == 0 {
+		return noOp{}
+	}
+	return f.In(values...)
+}
+
 // Asc returns an ascending order specification for this field
 func (f Int32Field) Asc() OrderField {
 	return OrderField{field: f, desc: false}
