@@ -248,8 +248,8 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 
 	// Build WHERE clause
 	if len(b.conditions) > 0 {
-		sqlBuilder.WriteString(" WHERE ")
-		for i, condition := range b.conditions {
+		whereClauses := make([]string, 0, len(b.conditions))
+		for _, condition := range b.conditions {
 			condSQL, condParams, err := condition.ToSQL()
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to build where condition: %w", err)
@@ -257,11 +257,12 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 			if condSQL == "" {
 				continue
 			}
-			if i > 0 {
-				sqlBuilder.WriteString(" AND ")
-			}
-			sqlBuilder.WriteString(condSQL)
+			whereClauses = append(whereClauses, condSQL)
 			params = append(params, condParams...)
+		}
+		if len(whereClauses) > 0 {
+			sqlBuilder.WriteString(" WHERE ")
+			sqlBuilder.WriteString(strings.Join(whereClauses, " AND "))
 		}
 	}
 
@@ -278,12 +279,8 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 
 	// Build HAVING clause
 	if len(b.havings) > 0 {
-		sqlBuilder.WriteString(" HAVING ")
-		for i, condition := range b.havings {
-			if i > 0 {
-				sqlBuilder.WriteString(" AND ")
-			}
-
+		havingClauses := make([]string, 0, len(b.havings))
+		for _, condition := range b.havings {
 			condSQL, condParams, err := condition.ToSQL()
 			if err != nil {
 				return "", nil, fmt.Errorf("failed to build having condition: %w", err)
@@ -291,8 +288,12 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 			if condSQL == "" {
 				continue
 			}
-			sqlBuilder.WriteString(condSQL)
+			havingClauses = append(havingClauses, condSQL)
 			params = append(params, condParams...)
+		}
+		if len(havingClauses) > 0 {
+			sqlBuilder.WriteString(" HAVING ")
+			sqlBuilder.WriteString(strings.Join(havingClauses, " AND "))
 		}
 	}
 
