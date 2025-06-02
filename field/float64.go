@@ -130,6 +130,20 @@ func (f Float64Field) LteField(other Float64Field) Expr {
 	}
 }
 
+func (f Float64Field) IsNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: true,
+	}
+}
+
+func (f Float64Field) IsNotNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: false,
+	}
+}
+
 // In creates an IN condition (field IN (values))
 func (f Float64Field) In(values ...float64) Expr {
 	if len(values) == 0 {

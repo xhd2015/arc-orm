@@ -138,6 +138,13 @@ func (f Int64Field) IsNull() Expr {
 	}
 }
 
+func (f Int64Field) IsNotNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: false,
+	}
+}
+
 // In creates an IN condition (field IN (values))
 func (f Int64Field) In(values ...int64) Expr {
 	if len(values) == 0 {

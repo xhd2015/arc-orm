@@ -138,6 +138,13 @@ func (f Int32Field) IsNull() Expr {
 	}
 }
 
+func (f Int32Field) IsNotNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: false,
+	}
+}
+
 // In creates an IN condition (field IN (values))
 func (f Int32Field) In(values ...int32) Expr {
 	if len(values) == 0 {

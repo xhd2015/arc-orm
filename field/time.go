@@ -127,6 +127,20 @@ func (f TimeField) LteField(other TimeField) Expr {
 	}
 }
 
+func (f TimeField) IsNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: true,
+	}
+}
+
+func (f TimeField) IsNotNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: false,
+	}
+}
+
 // Between creates a BETWEEN condition
 func (f TimeField) Between(start string, end string) Expr {
 	return &between{

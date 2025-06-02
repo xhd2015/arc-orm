@@ -131,6 +131,20 @@ func (f noOp) ToSQL() (string, []interface{}, error) {
 	return "", nil, nil
 }
 
+func (f StringField) IsNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: true,
+	}
+}
+
+func (f StringField) IsNotNull() Expr {
+	return &nullCondition{
+		field:  f,
+		isNull: false,
+	}
+}
+
 func (f StringField) In(values ...string) Expr {
 	if len(values) == 0 {
 		panic("in requires non-empty values")
