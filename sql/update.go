@@ -19,7 +19,7 @@ func Update(tableName string) *UpdateBuilder {
 type UpdateBuilder struct {
 	tableName  string
 	updates    []updateExpr
-	conditions []field.Condition
+	conditions []field.Expr
 }
 
 // updateExpr represents an update expression in the SET clause
@@ -42,7 +42,7 @@ func (b *UpdateBuilder) Set(f field.Field, value field.Expression) *UpdateBuilde
 }
 
 // Where adds conditions to the UPDATE query
-func (b *UpdateBuilder) Where(conditions ...field.Condition) *UpdateBuilder {
+func (b *UpdateBuilder) Where(conditions ...field.Expr) *UpdateBuilder {
 	b.conditions = append(b.conditions, conditions...)
 	return b
 }

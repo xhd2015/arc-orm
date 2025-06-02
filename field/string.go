@@ -17,12 +17,12 @@ func (f StringField) Table() string {
 }
 
 // ToSQL returns the SQL representation of the field
-func (f StringField) ToSQL() string {
-	return "`" + f.TableName + "`.`" + f.FieldName + "`"
+func (f StringField) ToSQL() (string, []interface{}, error) {
+	return "`" + f.TableName + "`.`" + f.FieldName + "`", nil, nil
 }
 
 // Eq creates an equality condition (field = value)
-func (f StringField) Eq(value string) Condition {
+func (f StringField) Eq(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "=",
@@ -30,8 +30,34 @@ func (f StringField) Eq(value string) Condition {
 	}
 }
 
+// EqField creates an equality condition between two fields (field1 = field2)
+func (f StringField) EqField(other Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "=",
+		right: other,
+	}
+}
+
+// Neq creates a not equal condition (field != value)
+func (f StringField) Neq(value string) Expr {
+	return &comparison{
+		field: f,
+		op:    "!=",
+		value: value,
+	}
+}
+
+func (f StringField) NeqField(other StringField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "!=",
+		right: other,
+	}
+}
+
 // Lte creates a less than or equal to condition (field <= value)
-func (f StringField) Lte(value string) Condition {
+func (f StringField) Lte(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "<=",
@@ -39,8 +65,16 @@ func (f StringField) Lte(value string) Condition {
 	}
 }
 
+func (f StringField) LteField(other StringField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<=",
+		right: other,
+	}
+}
+
 // Lt creates a less than condition (field < value)
-func (f StringField) Lt(value string) Condition {
+func (f StringField) Lt(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "<",
@@ -48,8 +82,16 @@ func (f StringField) Lt(value string) Condition {
 	}
 }
 
+func (f StringField) LtField(other StringField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<",
+		right: other,
+	}
+}
+
 // Gte creates a greater than or equal to condition (field >= value)
-func (f StringField) Gte(value string) Condition {
+func (f StringField) Gte(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    ">=",
@@ -57,12 +99,28 @@ func (f StringField) Gte(value string) Condition {
 	}
 }
 
+func (f StringField) GteField(other StringField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">=",
+		right: other,
+	}
+}
+
 // Gt creates a greater than condition (field > value)
-func (f StringField) Gt(value string) Condition {
+func (f StringField) Gt(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    ">",
 		value: value,
+	}
+}
+
+func (f StringField) GtField(other StringField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">",
+		right: other,
 	}
 }
 
@@ -73,7 +131,7 @@ func (f noOp) ToSQL() (string, []interface{}, error) {
 	return "", nil, nil
 }
 
-func (f StringField) In(values ...string) Condition {
+func (f StringField) In(values ...string) Expr {
 	if len(values) == 0 {
 		panic("in requires non-empty values")
 	}
@@ -87,33 +145,15 @@ func (f StringField) In(values ...string) Condition {
 	}
 }
 
-func (f StringField) InOrEmpty(values ...string) Condition {
+func (f StringField) InOrEmpty(values ...string) Expr {
 	if len(values) == 0 {
 		return noOp{}
 	}
 	return f.In(values...)
 }
 
-// EqField creates an equality condition between two fields (field1 = field2)
-func (f StringField) EqField(other Field) Condition {
-	return &fieldComparison{
-		left:  f,
-		op:    "=",
-		right: other,
-	}
-}
-
-// Neq creates a not equal condition (field != value)
-func (f StringField) Neq(value string) Condition {
-	return &comparison{
-		field: f,
-		op:    "!=",
-		value: value,
-	}
-}
-
 // Like creates a LIKE condition (field LIKE value)
-func (f StringField) Like(value string) Condition {
+func (f StringField) Like(value string) Expr {
 	return &like{
 		field: f,
 		value: value,
@@ -121,7 +161,7 @@ func (f StringField) Like(value string) Condition {
 }
 
 // Contains creates a LIKE condition with wildcards (field LIKE %value%)
-func (f StringField) Contains(value string) Condition {
+func (f StringField) Contains(value string) Expr {
 	if value == "" {
 		return noOp{}
 	}
@@ -132,7 +172,7 @@ func (f StringField) Contains(value string) Condition {
 }
 
 // StartsWith creates a LIKE condition with wildcard (field LIKE value%)
-func (f StringField) StartsWith(value string) Condition {
+func (f StringField) StartsWith(value string) Expr {
 	if value == "" {
 		return noOp{}
 	}
@@ -143,7 +183,7 @@ func (f StringField) StartsWith(value string) Condition {
 }
 
 // EndsWith creates a LIKE condition with wildcard (field LIKE %value)
-func (f StringField) EndsWith(value string) Condition {
+func (f StringField) EndsWith(value string) Expr {
 	if value == "" {
 		return noOp{}
 	}

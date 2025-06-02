@@ -8,11 +8,11 @@ import (
 	"github.com/xhd2015/less-gen/strcase"
 )
 
-func (o *ORM[T, P]) ToConditions(condition *P) ([]field.Condition, error) {
+func (o *ORM[T, P]) ToConditions(condition *P) ([]field.Expr, error) {
 	if condition == nil {
 		return nil, fmt.Errorf("requires condition")
 	}
-	var sqlConditions []field.Condition
+	var sqlConditions []field.Expr
 
 	rv := reflect.ValueOf(condition).Elem()
 	if rv.Kind() != reflect.Struct {
@@ -46,7 +46,7 @@ func (o *ORM[T, P]) ToConditions(condition *P) ([]field.Condition, error) {
 	return sqlConditions, nil
 }
 
-func (o *ORM[T, P]) toIDCondition(id int64) (field.Condition, error) {
+func (o *ORM[T, P]) toIDCondition(id int64) (field.Expr, error) {
 	if id == 0 {
 		return nil, fmt.Errorf("requires id, got 0")
 	}

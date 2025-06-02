@@ -18,13 +18,13 @@ func DeleteFrom(tableName string) *DeleteBuilder {
 // DeleteBuilder builds DELETE queries
 type DeleteBuilder struct {
 	tableName  string
-	conditions []field.Condition
+	conditions []field.Expr
 	limit      int
 	hasLimit   bool
 }
 
 // Where adds conditions to the DELETE query
-func (b *DeleteBuilder) Where(conditions ...field.Condition) *DeleteBuilder {
+func (b *DeleteBuilder) Where(conditions ...field.Expr) *DeleteBuilder {
 	b.conditions = append(b.conditions, conditions...)
 	return b
 }

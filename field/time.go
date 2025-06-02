@@ -17,12 +17,15 @@ func (f TimeField) Table() string {
 }
 
 // ToSQL returns the SQL representation of the field
-func (f TimeField) ToSQL() string {
-	return "`" + f.TableName + "`.`" + f.FieldName + "`"
+func (f TimeField) ToSQL() (string, []interface{}, error) {
+	if f.TableName == "" {
+		return "`" + f.FieldName + "`", nil, nil
+	}
+	return "`" + f.TableName + "`.`" + f.FieldName + "`", nil, nil
 }
 
 // Eq creates an equality condition (field = value)
-func (f TimeField) Eq(value string) Condition {
+func (f TimeField) Eq(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "=",
@@ -31,7 +34,7 @@ func (f TimeField) Eq(value string) Condition {
 }
 
 // EqField creates an equality condition between two fields (field1 = field2)
-func (f TimeField) EqField(other Field) Condition {
+func (f TimeField) EqField(other Field) Expr {
 	return &fieldComparison{
 		left:  f,
 		op:    "=",
@@ -40,7 +43,7 @@ func (f TimeField) EqField(other Field) Condition {
 }
 
 // Neq creates a not equal condition (field != value)
-func (f TimeField) Neq(value string) Condition {
+func (f TimeField) Neq(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "!=",
@@ -48,8 +51,16 @@ func (f TimeField) Neq(value string) Condition {
 	}
 }
 
+func (f TimeField) NeqField(other TimeField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "!=",
+		right: other,
+	}
+}
+
 // Gt creates a greater than condition (field > value)
-func (f TimeField) Gt(value string) Condition {
+func (f TimeField) Gt(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    ">",
@@ -57,8 +68,16 @@ func (f TimeField) Gt(value string) Condition {
 	}
 }
 
+func (f TimeField) GtField(other TimeField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">",
+		right: other,
+	}
+}
+
 // Gte creates a greater than or equal condition (field >= value)
-func (f TimeField) Gte(value string) Condition {
+func (f TimeField) Gte(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    ">=",
@@ -66,8 +85,16 @@ func (f TimeField) Gte(value string) Condition {
 	}
 }
 
+func (f TimeField) GteField(other TimeField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">=",
+		right: other,
+	}
+}
+
 // Lt creates a less than condition (field < value)
-func (f TimeField) Lt(value string) Condition {
+func (f TimeField) Lt(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "<",
@@ -75,8 +102,16 @@ func (f TimeField) Lt(value string) Condition {
 	}
 }
 
+func (f TimeField) LtField(other TimeField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<",
+		right: other,
+	}
+}
+
 // Lte creates a less than or equal condition (field <= value)
-func (f TimeField) Lte(value string) Condition {
+func (f TimeField) Lte(value string) Expr {
 	return &comparison{
 		field: f,
 		op:    "<=",
@@ -84,9 +119,25 @@ func (f TimeField) Lte(value string) Condition {
 	}
 }
 
+func (f TimeField) LteField(other TimeField) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<=",
+		right: other,
+	}
+}
+
 // Between creates a BETWEEN condition
-func (f TimeField) Between(start string, end string) Condition {
+func (f TimeField) Between(start string, end string) Expr {
 	return &between{
+		field: f,
+		start: start,
+		end:   end,
+	}
+}
+
+func (f TimeField) BetweenField(start TimeField, end TimeField) Expr {
+	return &betweenExpr{
 		field: f,
 		start: start,
 		end:   end,

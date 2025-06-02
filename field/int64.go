@@ -1,5 +1,7 @@
 package field
 
+import "fmt"
+
 // Int64Field represents an int64 database field
 type Int64Field struct {
 	FieldName string
@@ -17,16 +19,16 @@ func (f Int64Field) Table() string {
 }
 
 // ToSQL returns the SQL representation of the field
-func (f Int64Field) ToSQL() string {
+func (f Int64Field) ToSQL() (string, []interface{}, error) {
 	// If the field has no table, or the table name is empty, just use the field name
 	if f.TableName == "" {
-		return "`" + f.FieldName + "`"
+		return "`" + f.FieldName + "`", nil, nil
 	}
-	return "`" + f.TableName + "`.`" + f.FieldName + "`"
+	return "`" + f.TableName + "`.`" + f.FieldName + "`", nil, nil
 }
 
 // Eq creates an equality condition (field = value)
-func (f Int64Field) Eq(value int64) Condition {
+func (f Int64Field) Eq(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    "=",
@@ -35,7 +37,7 @@ func (f Int64Field) Eq(value int64) Condition {
 }
 
 // EqField creates an equality condition between two fields (field1 = field2)
-func (f Int64Field) EqField(other Field) Condition {
+func (f Int64Field) EqField(other Field) Expr {
 	return &fieldComparison{
 		left:  f,
 		op:    "=",
@@ -44,7 +46,7 @@ func (f Int64Field) EqField(other Field) Condition {
 }
 
 // Neq creates a not equal condition (field != value)
-func (f Int64Field) Neq(value int64) Condition {
+func (f Int64Field) Neq(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    "!=",
@@ -52,8 +54,16 @@ func (f Int64Field) Neq(value int64) Condition {
 	}
 }
 
+func (f Int64Field) NeqField(other Int64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "!=",
+		right: other,
+	}
+}
+
 // Gt creates a greater than condition (field > value)
-func (f Int64Field) Gt(value int64) Condition {
+func (f Int64Field) Gt(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    ">",
@@ -61,8 +71,16 @@ func (f Int64Field) Gt(value int64) Condition {
 	}
 }
 
+func (f Int64Field) GtField(other Int64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">",
+		right: other,
+	}
+}
+
 // Gte creates a greater than or equal condition (field >= value)
-func (f Int64Field) Gte(value int64) Condition {
+func (f Int64Field) Gte(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    ">=",
@@ -70,8 +88,16 @@ func (f Int64Field) Gte(value int64) Condition {
 	}
 }
 
+func (f Int64Field) GteField(other Int64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">=",
+		right: other,
+	}
+}
+
 // Lt creates a less than condition (field < value)
-func (f Int64Field) Lt(value int64) Condition {
+func (f Int64Field) Lt(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    "<",
@@ -79,8 +105,16 @@ func (f Int64Field) Lt(value int64) Condition {
 	}
 }
 
+func (f Int64Field) LtField(other Int64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<",
+		right: other,
+	}
+}
+
 // Lte creates a less than or equal condition (field <= value)
-func (f Int64Field) Lte(value int64) Condition {
+func (f Int64Field) Lte(value int64) Expr {
 	return &comparison{
 		field: f,
 		op:    "<=",
@@ -88,8 +122,16 @@ func (f Int64Field) Lte(value int64) Condition {
 	}
 }
 
+func (f Int64Field) LteField(other Int64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<=",
+		right: other,
+	}
+}
+
 // IsNull creates an IS NULL condition (field IS NULL)
-func (f Int64Field) IsNull() Condition {
+func (f Int64Field) IsNull() Expr {
 	return &nullCondition{
 		field:  f,
 		isNull: true,
@@ -97,7 +139,10 @@ func (f Int64Field) IsNull() Condition {
 }
 
 // In creates an IN condition (field IN (values))
-func (f Int64Field) In(values ...int64) Condition {
+func (f Int64Field) In(values ...int64) Expr {
+	if len(values) == 0 {
+		panic(fmt.Errorf("in requires at least one value"))
+	}
 	interfaceValues := make([]interface{}, len(values))
 	for i, v := range values {
 		interfaceValues[i] = v

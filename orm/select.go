@@ -5,6 +5,7 @@ import (
 
 	"github.com/xhd2015/arc-orm/field"
 	"github.com/xhd2015/arc-orm/sql"
+	"github.com/xhd2015/arc-orm/sql/expr"
 )
 
 type ORMSelectBuilder[T any, P any] struct {
@@ -26,12 +27,12 @@ func (c *ORM[T, P]) Select(fields ...field.Field) *ORMSelectBuilder[T, P] {
 	}
 }
 
-func (c *ORMSelectBuilder[T, P]) Where(conditions ...field.Condition) *ORMSelectBuilder[T, P] {
+func (c *ORMSelectBuilder[T, P]) Where(conditions ...field.Expr) *ORMSelectBuilder[T, P] {
 	c.builder.Where(conditions...)
 	return c
 }
 
-func (c *ORMSelectBuilder[T, P]) OrderBy(orderFields ...field.OrderField) *ORMSelectBuilder[T, P] {
+func (c *ORMSelectBuilder[T, P]) OrderBy(orderFields ...expr.Expr) *ORMSelectBuilder[T, P] {
 	c.builder.OrderBy(orderFields...)
 	return c
 }
@@ -51,7 +52,7 @@ func (c *ORMSelectBuilder[T, P]) Query(ctx context.Context) ([]*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.orm.Query(ctx, sql, args)
+	return c.orm.QuerySQL(ctx, sql, args)
 }
 
 func (c *ORMSelectBuilder[T, P]) QueryOne(ctx context.Context) (*T, error) {
@@ -60,7 +61,7 @@ func (c *ORMSelectBuilder[T, P]) QueryOne(ctx context.Context) (*T, error) {
 	if err != nil {
 		return nil, err
 	}
-	list, err := c.orm.Query(ctx, sql, args)
+	list, err := c.orm.QuerySQL(ctx, sql, args)
 	if err != nil {
 		return nil, err
 	}

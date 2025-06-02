@@ -1,46 +1,19 @@
 package field
 
-import "strings"
+import (
+	"strings"
+
+	"github.com/xhd2015/arc-orm/sql/expr"
+)
+
+// Expr represents a SQL condition
+type Expr = expr.Expr
 
 // Field interface represents a database field with a name and table
 type Field interface {
 	Name() string
 	Table() string
-	ToSQL() string
-}
-
-// Condition represents a SQL condition
-type Condition interface {
-	ToSQL() (string, []interface{}, error)
-}
-
-// AliasField wraps any field with an alias
-type AliasField struct {
-	field Field
-	alias string
-}
-
-// Name returns the field name
-func (a AliasField) Name() string {
-	return a.field.Name()
-}
-
-// Table returns the table name
-func (a AliasField) Table() string {
-	return a.field.Table()
-}
-
-// ToSQL returns the SQL representation of the field with its alias
-func (a AliasField) ToSQL() string {
-	return a.field.ToSQL() + " AS `" + a.alias + "`"
-}
-
-// As creates an aliased field
-func As(f Field, alias string) Field {
-	return AliasField{
-		field: f,
-		alias: alias,
-	}
+	expr.Expr
 }
 
 // comparison represents a comparison operation between a field and a value
@@ -51,7 +24,11 @@ type comparison struct {
 }
 
 func (c *comparison) ToSQL() (string, []interface{}, error) {
-	return c.field.ToSQL() + " " + c.op + " ?", []interface{}{c.value}, nil
+	sql, params, err := c.field.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return sql + " " + c.op + " ?", append(params, c.value), nil
 }
 
 // like represents a LIKE condition
@@ -61,23 +38,27 @@ type like struct {
 }
 
 func (l *like) ToSQL() (string, []interface{}, error) {
-	return l.field.ToSQL() + " LIKE ?", []interface{}{l.value}, nil
+	sql, params, err := l.field.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return sql + " LIKE ?", append(params, l.value), nil
 }
 
 // or represents an OR condition
 type or struct {
-	conditions []Condition
+	conditions []Expr
 }
 
 type and struct {
-	conditions []Condition
+	conditions []Expr
 }
 
 // Or creates an OR condition from multiple conditions
-func Or(conditions ...Condition) Condition {
+func Or(conditions ...Expr) Expr {
 	return &or{conditions: conditions}
 }
-func And(conditions ...Condition) Condition {
+func And(conditions ...Expr) Expr {
 	return &and{conditions: conditions}
 }
 
@@ -89,7 +70,7 @@ func (a *and) ToSQL() (string, []interface{}, error) {
 	return joinCodnitions(a.conditions, "AND")
 }
 
-func joinCodnitions(conditions []Condition, op string) (string, []interface{}, error) {
+func joinCodnitions(conditions []Expr, op string) (string, []interface{}, error) {
 	if len(conditions) == 0 {
 		return "", nil, nil
 	}

@@ -1,5 +1,7 @@
 package field
 
+import "fmt"
+
 // Float64Field represents a float64 database field
 type Float64Field struct {
 	FieldName string
@@ -17,16 +19,16 @@ func (f Float64Field) Table() string {
 }
 
 // ToSQL returns the SQL representation of the field
-func (f Float64Field) ToSQL() string {
+func (f Float64Field) ToSQL() (string, []interface{}, error) {
 	// If the field has no table, or the table name is empty, just use the field name
 	if f.TableName == "" {
-		return "`" + f.FieldName + "`"
+		return "`" + f.FieldName + "`", nil, nil
 	}
-	return "`" + f.TableName + "`.`" + f.FieldName + "`"
+	return "`" + f.TableName + "`.`" + f.FieldName + "`", nil, nil
 }
 
 // Eq creates an equality condition (field = value)
-func (f Float64Field) Eq(value float64) Condition {
+func (f Float64Field) Eq(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    "=",
@@ -35,7 +37,7 @@ func (f Float64Field) Eq(value float64) Condition {
 }
 
 // EqField creates an equality condition between two fields (field1 = field2)
-func (f Float64Field) EqField(other Field) Condition {
+func (f Float64Field) EqField(other Field) Expr {
 	return &fieldComparison{
 		left:  f,
 		op:    "=",
@@ -44,7 +46,7 @@ func (f Float64Field) EqField(other Field) Condition {
 }
 
 // Neq creates a not equal condition (field != value)
-func (f Float64Field) Neq(value float64) Condition {
+func (f Float64Field) Neq(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    "!=",
@@ -52,8 +54,16 @@ func (f Float64Field) Neq(value float64) Condition {
 	}
 }
 
+func (f Float64Field) NeqField(other Float64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "!=",
+		right: other,
+	}
+}
+
 // Gt creates a greater than condition (field > value)
-func (f Float64Field) Gt(value float64) Condition {
+func (f Float64Field) Gt(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    ">",
@@ -61,8 +71,16 @@ func (f Float64Field) Gt(value float64) Condition {
 	}
 }
 
+func (f Float64Field) GtField(other Float64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">",
+		right: other,
+	}
+}
+
 // Gte creates a greater than or equal condition (field >= value)
-func (f Float64Field) Gte(value float64) Condition {
+func (f Float64Field) Gte(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    ">=",
@@ -70,8 +88,16 @@ func (f Float64Field) Gte(value float64) Condition {
 	}
 }
 
+func (f Float64Field) GteField(other Float64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    ">=",
+		right: other,
+	}
+}
+
 // Lt creates a less than condition (field < value)
-func (f Float64Field) Lt(value float64) Condition {
+func (f Float64Field) Lt(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    "<",
@@ -79,8 +105,16 @@ func (f Float64Field) Lt(value float64) Condition {
 	}
 }
 
+func (f Float64Field) LtField(other Float64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<",
+		right: other,
+	}
+}
+
 // Lte creates a less than or equal condition (field <= value)
-func (f Float64Field) Lte(value float64) Condition {
+func (f Float64Field) Lte(value float64) Expr {
 	return &comparison{
 		field: f,
 		op:    "<=",
@@ -88,8 +122,19 @@ func (f Float64Field) Lte(value float64) Condition {
 	}
 }
 
+func (f Float64Field) LteField(other Float64Field) Expr {
+	return &fieldComparison{
+		left:  f,
+		op:    "<=",
+		right: other,
+	}
+}
+
 // In creates an IN condition (field IN (values))
-func (f Float64Field) In(values ...float64) Condition {
+func (f Float64Field) In(values ...float64) Expr {
+	if len(values) == 0 {
+		panic(fmt.Errorf("in requires at least one value"))
+	}
 	interfaceValues := make([]interface{}, len(values))
 	for i, v := range values {
 		interfaceValues[i] = v
@@ -98,6 +143,13 @@ func (f Float64Field) In(values ...float64) Condition {
 		field:  f,
 		values: interfaceValues,
 	}
+}
+
+func (f Float64Field) InOrEmpty(values ...float64) Expr {
+	if len(values) == 0 {
+		return noOp{}
+	}
+	return f.In(values...)
 }
 
 // Asc returns an ascending order specification for this field

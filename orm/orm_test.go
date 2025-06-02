@@ -151,7 +151,7 @@ func TestQuery_Success(t *testing.T) {
 	query := "SELECT * FROM test_table WHERE age > ?"
 	args := []interface{}{18}
 
-	results, err := orm.Query(context.Background(), query, args)
+	results, err := orm.QuerySQL(context.Background(), query, args)
 
 	// Verify results
 	if err != nil {
@@ -196,7 +196,7 @@ func TestQuery_Error(t *testing.T) {
 	}
 
 	// Execute a query
-	results, err := orm.Query(context.Background(), "SELECT * FROM test_table", nil)
+	results, err := orm.QuerySQL(context.Background(), "SELECT * FROM test_table", nil)
 
 	// Verify error handling
 	if err == nil {
@@ -235,7 +235,7 @@ func TestQuery_EmptyResults(t *testing.T) {
 	}
 
 	// Execute a query
-	results, err := orm.Query(context.Background(), "SELECT * FROM test_table", nil)
+	results, err := orm.QuerySQL(context.Background(), "SELECT * FROM test_table", nil)
 
 	// Verify empty results handling
 	if err != nil {

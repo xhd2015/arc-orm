@@ -5,7 +5,7 @@ import "github.com/xhd2015/arc-orm/field"
 // Optional conditionally includes conditions based on the boolean flag v.
 // If v is true, all conditions in conds are included.
 // If v is false, returns an empty condition that produces no SQL.
-func Optional(v bool, conds ...field.Condition) field.Condition {
+func Optional(v bool, conds ...field.Expr) field.Expr {
 	if !v {
 		return noOp{}
 	}

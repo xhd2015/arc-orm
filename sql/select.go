@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/xhd2015/arc-orm/field"
+	"github.com/xhd2015/arc-orm/sql/expr"
 )
 
 // Select creates a new SelectBuilder with the given fields
@@ -31,24 +32,31 @@ type AggregateFunc struct {
 
 // OrderField represents a field with ordering direction
 type OrderField struct {
-	Field interface{ ToSQL() string }
+	Field expr.Expr
 	Desc  bool
 }
 
 // ToSQL returns the SQL representation of the OrderField
-func (o OrderField) ToSQL() string {
-	sql := o.Field.ToSQL()
+func (o OrderField) ToSQL() (string, []interface{}, error) {
+	sql, params, err := o.Field.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
 	if o.Desc {
 		sql += " DESC"
 	} else {
 		sql += " ASC"
 	}
-	return sql
+	return sql, params, nil
 }
 
 // ToSQL returns the SQL representation of the aggregate function
-func (a AggregateFunc) ToSQL() string {
-	return a.name + "(" + a.field.ToSQL() + ")"
+func (a AggregateFunc) ToSQL() (string, []interface{}, error) {
+	sql, params, err := a.field.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return a.name + "(" + sql + ")", params, nil
 }
 
 // Name implements the Field interface
@@ -85,7 +93,7 @@ func Max(f field.Field) AggregateFunc {
 }
 
 // Gt creates a greater than condition
-func (a AggregateFunc) Gt(value int64) field.Condition {
+func (a AggregateFunc) Gt(value int64) field.Expr {
 	return &havingCondition{
 		expr:  a,
 		op:    ">",
@@ -94,7 +102,7 @@ func (a AggregateFunc) Gt(value int64) field.Condition {
 }
 
 // Lt creates a less than condition
-func (a AggregateFunc) Lt(value int64) field.Condition {
+func (a AggregateFunc) Lt(value int64) field.Expr {
 	return &havingCondition{
 		expr:  a,
 		op:    "<",
@@ -110,7 +118,11 @@ type havingCondition struct {
 }
 
 func (c *havingCondition) ToSQL() (string, []interface{}, error) {
-	return c.expr.ToSQL() + " " + c.op + " ?", []interface{}{c.value}, nil
+	sql, params, err := c.expr.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return sql + " " + c.op + " ?", append(params, c.value), nil
 }
 
 // SelectBuilder builds SELECT queries
@@ -118,9 +130,9 @@ type SelectBuilder struct {
 	fields     []field.Field
 	tableName  string
 	joins      []join
-	conditions []field.Condition
+	conditions []field.Expr
 	groupBys   []field.Field
-	havings    []field.Condition
+	havings    []field.Expr
 	orderBys   []orderBy
 	limit      int
 	offset     int
@@ -130,12 +142,12 @@ type SelectBuilder struct {
 
 type join struct {
 	tableName string
-	condition field.Condition
+	condition field.Expr
 	joinType  string
 }
 
 type orderBy struct {
-	field field.OrderField
+	field expr.Expr
 }
 
 // From specifies the table to select from
@@ -145,13 +157,13 @@ func (b *SelectBuilder) From(tableName string) *SelectBuilder {
 }
 
 // Where adds conditions to the query
-func (b *SelectBuilder) Where(conditions ...field.Condition) *SelectBuilder {
+func (b *SelectBuilder) Where(conditions ...field.Expr) *SelectBuilder {
 	b.conditions = append(b.conditions, conditions...)
 	return b
 }
 
 // Join adds a join clause to the query
-func (b *SelectBuilder) Join(tableName string, condition field.Condition) *SelectBuilder {
+func (b *SelectBuilder) Join(tableName string, condition field.Expr) *SelectBuilder {
 	b.joins = append(b.joins, join{
 		tableName: tableName,
 		condition: condition,
@@ -161,7 +173,7 @@ func (b *SelectBuilder) Join(tableName string, condition field.Condition) *Selec
 }
 
 // LeftJoin adds a left join clause to the query
-func (b *SelectBuilder) LeftJoin(tableName string, condition field.Condition) *SelectBuilder {
+func (b *SelectBuilder) LeftJoin(tableName string, condition field.Expr) *SelectBuilder {
 	b.joins = append(b.joins, join{
 		tableName: tableName,
 		condition: condition,
@@ -177,13 +189,13 @@ func (b *SelectBuilder) GroupBy(fields ...field.Field) *SelectBuilder {
 }
 
 // Having adds HAVING conditions to the query
-func (b *SelectBuilder) Having(conditions ...field.Condition) *SelectBuilder {
+func (b *SelectBuilder) Having(conditions ...field.Expr) *SelectBuilder {
 	b.havings = append(b.havings, conditions...)
 	return b
 }
 
 // OrderBy adds ORDER BY fields to the query
-func (b *SelectBuilder) OrderBy(orderFields ...field.OrderField) *SelectBuilder {
+func (b *SelectBuilder) OrderBy(orderFields ...expr.Expr) *SelectBuilder {
 	for _, f := range orderFields {
 		b.orderBys = append(b.orderBys, orderBy{field: f})
 	}
@@ -219,7 +231,12 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 		if i > 0 {
 			sqlBuilder.WriteString(", ")
 		}
-		sqlBuilder.WriteString(field.ToSQL())
+		sql, fieldParams, err := field.ToSQL()
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to build select field: %w", err)
+		}
+		sqlBuilder.WriteString(sql)
+		params = append(params, fieldParams...)
 	}
 
 	// Build FROM clause
@@ -273,7 +290,12 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 			if i > 0 {
 				sqlBuilder.WriteString(", ")
 			}
-			sqlBuilder.WriteString(field.ToSQL())
+			sql, fieldParams, err := field.ToSQL()
+			if err != nil {
+				return "", nil, fmt.Errorf("failed to build group by condition: %w", err)
+			}
+			sqlBuilder.WriteString(sql)
+			params = append(params, fieldParams...)
 		}
 	}
 
@@ -304,7 +326,12 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 			if i > 0 {
 				sqlBuilder.WriteString(", ")
 			}
-			sqlBuilder.WriteString(orderBy.field.ToSQL())
+			sql, orderByParams, err := orderBy.field.ToSQL()
+			if err != nil {
+				return "", nil, fmt.Errorf("failed to build order by condition: %w", err)
+			}
+			sqlBuilder.WriteString(sql)
+			params = append(params, orderByParams...)
 		}
 	}
 
