@@ -47,7 +47,7 @@ func (o *ORM[T, P]) GetBy(ctx context.Context, condition *P) (*T, error) {
 }
 
 func (o *ORM[T, P]) get(ctx context.Context, conditions []field.Expr) (*T, error) {
-	querySQL, args, err := sql.Select(o.table.Fields()...).
+	querySQL, args, err := sql.Select(fieldsToExprs(o.table.Fields())...).
 		From(o.table.Name()).
 		Where(conditions...).
 		Limit(1).

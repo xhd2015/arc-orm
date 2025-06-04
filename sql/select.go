@@ -3,6 +3,7 @@ package sql
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/xhd2015/arc-orm/field"
@@ -10,7 +11,7 @@ import (
 )
 
 // Select creates a new SelectBuilder with the given fields
-func Select(fields ...field.Field) *SelectBuilder {
+func Select(fields ...Expr) *SelectBuilder {
 	return &SelectBuilder{
 		fields: fields,
 	}
@@ -127,17 +128,18 @@ func (c *havingCondition) ToSQL() (string, []interface{}, error) {
 
 // SelectBuilder builds SELECT queries
 type SelectBuilder struct {
-	fields     []field.Field
-	tableName  string
-	joins      []join
-	conditions []field.Expr
-	groupBys   []field.Field
-	havings    []field.Expr
-	orderBys   []orderBy
-	limit      int
-	offset     int
-	hasLimit   bool
-	hasOffset  bool
+	fields        []Expr
+	tableName     string
+	joins         []join
+	conditions    []field.Expr
+	excludeFields []field.Field
+	groupBys      []field.Field
+	havings       []field.Expr
+	orderBys      []orderBy
+	limit         int
+	offset        int
+	hasLimit      bool
+	hasOffset     bool
 }
 
 type join struct {
@@ -159,6 +161,12 @@ func (b *SelectBuilder) From(tableName string) *SelectBuilder {
 // Where adds conditions to the query
 func (b *SelectBuilder) Where(conditions ...field.Expr) *SelectBuilder {
 	b.conditions = append(b.conditions, conditions...)
+	return b
+}
+
+// Exclude adds fields to the query
+func (b *SelectBuilder) Exclude(fields ...field.Field) *SelectBuilder {
+	b.excludeFields = append(b.excludeFields, fields...)
 	return b
 }
 
@@ -227,14 +235,34 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 
 	// Build SELECT clause
 	sqlBuilder.WriteString("SELECT ")
-	for i, field := range b.fields {
-		if i > 0 {
-			sqlBuilder.WriteString(", ")
+
+	if len(b.fields) == 0 && len(b.excludeFields) > 0 {
+		return "", nil, errors.New("exclude fields without selected fields")
+	}
+
+	// excluded names
+	var excludedNames []string
+	for _, field := range b.excludeFields {
+		sql, _, err := field.ToSQL()
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to build exclude field: %w", err)
 		}
+		excludedNames = append(excludedNames, sql)
+	}
+
+	var numField int
+	for _, field := range b.fields {
 		sql, fieldParams, err := field.ToSQL()
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to build select field: %w", err)
 		}
+		if slices.Contains(excludedNames, sql) {
+			continue
+		}
+		if numField > 0 {
+			sqlBuilder.WriteString(", ")
+		}
+		numField++
 		sqlBuilder.WriteString(sql)
 		params = append(params, fieldParams...)
 	}

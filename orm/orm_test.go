@@ -696,21 +696,15 @@ func TestCount_Success(t *testing.T) {
 	}
 
 	// Execute a count query
-	query := "SELECT COUNT(*) as count FROM test_table"
-	results, err := orm.Count(context.Background(), query, nil)
+	n, err := orm.Count().Query(context.Background())
 
 	// Verify results
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	if len(results) != 1 {
-		t.Fatalf("Expected 1 result, got %d", len(results))
-	}
-
-	// Check the Count field value
-	if results[0].Count != 5 {
-		t.Errorf("Expected count 5, got %d", results[0].Count)
+	if n != 5 {
+		t.Fatalf("Expected 5, got %d", n)
 	}
 }
 
@@ -804,7 +798,7 @@ func TestCount_ModelLacksCountField(t *testing.T) {
 	}
 
 	// Execute Count
-	results, err := orm.Count(context.Background(), "SELECT COUNT(*) FROM test_table", nil)
+	n, err := orm.Count().Query(context.Background())
 
 	// Verify error handling
 	if err == nil {
@@ -815,8 +809,8 @@ func TestCount_ModelLacksCountField(t *testing.T) {
 		t.Errorf("Expected error to be ErrMissingCountField, got %v", err)
 	}
 
-	if results != nil {
-		t.Errorf("Expected nil results, got %v", results)
+	if n != 0 {
+		t.Errorf("Expected 0, got %d", n)
 	}
 }
 
@@ -853,7 +847,7 @@ func TestCount_WrongCountFieldType(t *testing.T) {
 	}
 
 	// Execute Count
-	results, err := orm.Count(context.Background(), "SELECT COUNT(*) FROM test_table", nil)
+	n, err := orm.Count().Query(context.Background())
 
 	// Verify error handling
 	if err == nil {
@@ -864,8 +858,8 @@ func TestCount_WrongCountFieldType(t *testing.T) {
 		t.Errorf("Expected error about Count field type, got: %v", err)
 	}
 
-	if results != nil {
-		t.Errorf("Expected nil results, got %v", results)
+	if n != 0 {
+		t.Errorf("Expected 0, got %d", n)
 	}
 }
 
