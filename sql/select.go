@@ -3,7 +3,6 @@ package sql
 import (
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/xhd2015/arc-orm/field"
@@ -256,7 +255,7 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to build select field: %w", err)
 		}
-		if slices.Contains(excludedNames, sql) {
+		if stringsContains(excludedNames, sql) {
 			continue
 		}
 		if numField > 0 {
@@ -374,4 +373,13 @@ func (b *SelectBuilder) SQL() (string, []interface{}, error) {
 	}
 
 	return sqlBuilder.String(), params, nil
+}
+
+func stringsContains(list []string, item string) bool {
+	for _, v := range list {
+		if v == item {
+			return true
+		}
+	}
+	return false
 }
