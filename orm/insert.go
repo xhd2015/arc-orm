@@ -49,7 +49,6 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 
 		// Convert field name to snake_case
 		fieldName := strcase.CamelToSnake(fieldType.Name)
-
 		// Get the corresponding table field
 		tableField, exists := tableFields[fieldName]
 		if !exists {
@@ -60,15 +59,22 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 		var sqlValue interface {
 			ToExpressionSQL() (string, interface{})
 		}
+		var isZero bool
 		switch field.Kind() {
 		case reflect.String:
 			sqlValue = sql.String(field.String())
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			sqlValue = sql.Int64(field.Int())
+			val := field.Int()
+			isZero = val == 0
+			sqlValue = sql.Int64(val)
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			sqlValue = sql.Int64(field.Uint())
+			val := field.Uint()
+			isZero = val == 0
+			sqlValue = sql.Int64(val)
 		case reflect.Float64, reflect.Float32:
-			sqlValue = sql.Float64(field.Float())
+			val := field.Float()
+			isZero = val == 0
+			sqlValue = sql.Float64(val)
 		case reflect.Bool:
 			sqlValue = sql.Bool(field.Bool())
 		case reflect.Struct:
@@ -83,6 +89,11 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 
 				sqlValue = sql.Time(timeValue)
 			}
+		}
+
+		// skip id when it is zero
+		if fieldName == "id" && isZero {
+			continue
 		}
 
 		// Skip if we couldn't convert the value
