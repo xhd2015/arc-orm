@@ -1,5 +1,5 @@
-github.com/xhd2015/less-gen v0.0.7 h1:iTb8JxeZjzthW7XQwacwAYYB6C+AuVC99Dy/yZ5zk1k=
-github.com/xhd2015/less-gen v0.0.7/go.mod h1:Ym5HW/yfVnf2mgSo48QsuHAKnMTPv/u7oqty+raTnTQ=
+github.com/xhd2015/less-gen v0.0.19 h1:JllrPhx3HzN+f2AB6cTvW9aRCpvuODJFx7affpa0zQY=
+github.com/xhd2015/less-gen v0.0.19/go.mod h1:Ym5HW/yfVnf2mgSo48QsuHAKnMTPv/u7oqty+raTnTQ=
 github.com/xhd2015/xgo v1.1.7 h1:JWIACBBD8qlY4Fu42/v6BmkTyCRHgOuw2ctylrfAFkE=
 github.com/xhd2015/xgo v1.1.7/go.mod h1:LJxlcYSaXo/9YpsnB3yHh9NHe7BRettYCytaNGWY2BE=
 golang.org/x/mod v0.20.0 h1:utOm6MM3R3dnawAiJgn0y+xvuYRsm1RKM/4giyfDgV0=

@@ -32,6 +32,15 @@ func (o *ORM[T, P]) DeleteBy(ctx context.Context, condition *P) error {
 	return o.deleteBy(ctx, sqlConditions)
 }
 
+// DeleteByID deletes a record by its ID
+func (o *ORM[T, P]) DeleteWhere(ctx context.Context, conditions ...field.Expr) error {
+	if len(conditions) == 0 {
+		return fmt.Errorf("requires conditions")
+	}
+
+	return o.deleteBy(ctx, conditions)
+}
+
 func (o *ORM[T, P]) deleteBy(ctx context.Context, conditions []field.Expr) error {
 	if len(conditions) == 0 {
 		return fmt.Errorf("requires conditions")
