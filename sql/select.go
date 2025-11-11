@@ -212,14 +212,14 @@ func (b *SelectBuilder) OrderBy(orderFields ...expr.Expr) *SelectBuilder {
 // Limit sets the LIMIT value
 func (b *SelectBuilder) Limit(limit int) *SelectBuilder {
 	b.limit = limit
-	b.hasLimit = true
+	b.hasLimit = limit > 0
 	return b
 }
 
 // Offset sets the OFFSET value
 func (b *SelectBuilder) Offset(offset int) *SelectBuilder {
 	b.offset = offset
-	b.hasOffset = true
+	b.hasOffset = offset > 0
 	return b
 }
 
