@@ -23,6 +23,13 @@ func (t Table) Name() string {
 	return t.name
 }
 
+func (t Table) WithName(name string) Table {
+	return Table{
+		name:   name,
+		fields: t.fields,
+	}
+}
+
 // Fields returns all fields associated with this table
 func (t Table) Fields() []field.Field {
 	return t.fields
