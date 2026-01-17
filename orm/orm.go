@@ -20,9 +20,10 @@ type ORM[T any, P any] struct {
 
 // Common errors
 var (
-	ErrNothingToUpdate   = errors.New("nothing to update")
-	ErrMissingIDField    = errors.New("table is missing 'id' field")
-	ErrMissingCountField = errors.New("model type must have a Count field of type int64")
+	ErrNothingToUpdate     = errors.New("nothing to update")
+	ErrMissingIDField      = errors.New("table is missing 'id' field")
+	ErrMissingCountField   = errors.New("model type must have a Count field of type int64")
+	ErrWrongCountFieldType = errors.New("Count field must be of type int64")
 )
 
 // Bind creates a new ORM instance and panics if validation fails

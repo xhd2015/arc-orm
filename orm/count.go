@@ -22,9 +22,14 @@ func (c *ORM[T, P]) Count(fields ...sql.Expr) *ORMCountBuilder[T, P] {
 	modelType := reflect.TypeOf((*T)(nil)).Elem()
 
 	// Find the Count field
-	_, found := modelType.FieldByName("Count")
+	countField, found := modelType.FieldByName("Count")
 	if !found {
 		panic(ErrMissingCountField)
+	}
+
+	// Validate that Count field is int64
+	if countField.Type.Kind() != reflect.Int64 {
+		panic(ErrWrongCountFieldType)
 	}
 
 	allFields := make([]sql.Expr, 0, len(fields)+1)

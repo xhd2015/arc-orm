@@ -54,12 +54,76 @@ type and struct {
 	conditions []Expr
 }
 
+type paren struct {
+	expr Expr
+}
+
+func (p *paren) ToSQL() (string, []interface{}, error) {
+	sql, params, err := p.expr.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return "(" + sql + ")", params, nil
+}
+
+type mathOperation struct {
+	exprs []Expr
+	op    string
+}
+
 // Or creates an OR condition from multiple conditions
 func Or(conditions ...Expr) Expr {
 	return &or{conditions: conditions}
 }
 func And(conditions ...Expr) Expr {
 	return &and{conditions: conditions}
+}
+
+func Paren(expr Expr) Expr {
+	return &paren{expr: expr}
+}
+
+func Add(exprs ...Expr) Expr {
+	return mathOpExprs("+", exprs)
+}
+
+func Sub(exprs ...Expr) Expr {
+	return mathOpExprs("-", exprs)
+}
+
+func Mul(exprs ...Expr) Expr {
+	return mathOpExprs("*", exprs)
+}
+
+func Div(exprs ...Expr) Expr {
+	return mathOpExprs("/", exprs)
+}
+
+func mathOpExprs(op string, exprs []Expr) Expr {
+	if len(exprs) == 0 {
+		return noOp{}
+	}
+	if len(exprs) == 1 {
+		return exprs[0]
+	}
+	return &mathOperation{
+		exprs: exprs,
+		op:    op,
+	}
+}
+
+func (m *mathOperation) ToSQL() (string, []interface{}, error) {
+	sqlParts := make([]string, 0, len(m.exprs))
+	params := make([]interface{}, 0)
+	for _, expr := range m.exprs {
+		sql, params, err := expr.ToSQL()
+		if err != nil {
+			return "", nil, err
+		}
+		sqlParts = append(sqlParts, sql)
+		params = append(params, params...)
+	}
+	return strings.Join(sqlParts, " "+m.op+" "), params, nil
 }
 
 func (o *or) ToSQL() (string, []interface{}, error) {
@@ -99,11 +163,6 @@ func joinCodnitions(conditions []Expr, op string) (string, []interface{}, error)
 	return "(" + strings.Join(sqlParts, " "+op+" ") + ")", params, nil
 }
 
-// Expression represents a SQL expression
-type Expression interface {
-	ToExpressionSQL() (string, interface{})
-}
-
 // fieldOperation represents a field operation (like increment, decrement, concatenate)
 type fieldOperation struct {
 	field    Field
@@ -111,6 +170,7 @@ type fieldOperation struct {
 	value    interface{}
 }
 
-func (op *fieldOperation) ToExpressionSQL() (string, interface{}) {
-	return "`" + op.field.Table() + "`.`" + op.field.Name() + "`" + op.operator, op.value
+// ToSQL implements Expr for field operations (increment, decrement, etc.)
+func (op *fieldOperation) ToSQL() (string, []interface{}, error) {
+	return "`" + op.field.Table() + "`.`" + op.field.Name() + "`" + op.operator + "?", []interface{}{op.value}, nil
 }

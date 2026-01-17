@@ -184,7 +184,7 @@ func (f Int32Field) As(alias string) Field {
 }
 
 // Increment returns an expression to increment this field by a value
-func (f Int32Field) Increment(value int32) Expression {
+func (f Int32Field) Increment(value int32) Expr {
 	return &fieldOperation{
 		field:    f,
 		operator: "+",
@@ -193,7 +193,7 @@ func (f Int32Field) Increment(value int32) Expression {
 }
 
 // Decrement returns an expression to decrement this field by a value
-func (f Int32Field) Decrement(value int32) Expression {
+func (f Int32Field) Decrement(value int32) Expr {
 	return &fieldOperation{
 		field:    f,
 		operator: "-",

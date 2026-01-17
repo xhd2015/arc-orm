@@ -5,46 +5,46 @@ import "time"
 // String is a string literal expression for use in SQL statements
 type String string
 
-// ToExpressionSQL returns the SQL for a string literal
-func (s String) ToExpressionSQL() (string, interface{}) {
-	return "", string(s)
+// ToSQL implements field.Expr for string literals
+func (s String) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{string(s)}, nil
 }
 
 // Int64 is an int64 literal expression for use in SQL statements
 type Int64 int64
 
-// ToExpressionSQL returns the SQL for an int64 literal
-func (i Int64) ToExpressionSQL() (string, interface{}) {
-	return "", int64(i)
+// ToSQL implements field.Expr for int64 literals
+func (i Int64) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{int64(i)}, nil
 }
 
 type Int32 int32
 
-// ToExpressionSQL returns the SQL for an int32 literal
-func (i Int32) ToExpressionSQL() (string, interface{}) {
-	return "", int32(i)
+// ToSQL implements field.Expr for int32 literals
+func (i Int32) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{int32(i)}, nil
 }
 
 // Float64 is a float64 literal expression for use in SQL statements
 type Float64 float64
 
-// ToExpressionSQL returns the SQL for a float64 literal
-func (f Float64) ToExpressionSQL() (string, interface{}) {
-	return "", float64(f)
+// ToSQL implements field.Expr for float64 literals
+func (f Float64) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{float64(f)}, nil
 }
 
 // Bool is a boolean literal expression for use in SQL statements
 type Bool bool
 
-// ToExpressionSQL returns the SQL for a boolean literal
-func (b Bool) ToExpressionSQL() (string, interface{}) {
-	return "", bool(b)
+// ToSQL implements field.Expr for boolean literals
+func (b Bool) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{bool(b)}, nil
 }
 
 // Time is a time.Time literal expression for use in SQL statements
 type Time time.Time
 
-// ToExpressionSQL returns the SQL for a time literal
-func (t Time) ToExpressionSQL() (string, interface{}) {
-	return "", time.Time(t)
+// ToSQL implements field.Expr for time literals
+func (t Time) ToSQL() (string, []interface{}, error) {
+	return "?", []interface{}{time.Time(t)}, nil
 }

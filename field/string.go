@@ -223,7 +223,7 @@ func (f StringField) As(alias string) Field {
 }
 
 // Concat returns an expression to concatenate this field with a string
-func (f StringField) Concat(value string) Expression {
+func (f StringField) Concat(value string) Expr {
 	return &fieldOperation{
 		field:    f,
 		operator: "+",

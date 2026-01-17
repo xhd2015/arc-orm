@@ -18,6 +18,7 @@ var (
 	ErrFieldMismatch      = errors.New("field mismatch between model and table")
 	ErrFieldTypeMismatch  = errors.New("field type mismatch between model and table")
 	ErrFieldCountMismatch = errors.New("number of fields in model does not match table")
+	ErrInvalidFieldNaming = errors.New("field name must be strict CamelCase (no consecutive uppercase letters)")
 )
 
 // Validate checks if the model type T and optional fields type P
@@ -79,6 +80,11 @@ func validateModelType[T any](tbl table.Table) error {
 	for i := 0; i < modelType.NumField(); i++ {
 		field := modelType.Field(i)
 		if field.IsExported() {
+			// Validate field naming - must be strict CamelCase (no consecutive uppercase)
+			if err := validateFieldNaming(field.Name); err != nil {
+				return err
+			}
+
 			fieldName := getFieldName(field)
 
 			// Special handling for Count field
@@ -229,6 +235,76 @@ func validateOptionalType[T, P any]() error {
 func getFieldName(field reflect.StructField) string {
 	// Convert field name to snake_case for comparison with table fields
 	return strcase.CamelToSnake(field.Name)
+}
+
+// hasConsecutiveUppercase checks if a string has two or more consecutive uppercase letters.
+// This is used to enforce strict CamelCase naming (e.g., "SomeId" is valid, "SomeID" is not).
+// Names like "ID" are also invalid - use "Id" instead.
+func hasConsecutiveUppercase(s string) bool {
+	prevUpper := false
+	for _, r := range s {
+		isUpper := r >= 'A' && r <= 'Z'
+		if isUpper && prevUpper {
+			return true
+		}
+		prevUpper = isUpper
+	}
+	return false
+}
+
+// toStrictCamelCase converts a field name to strict CamelCase format.
+// It converts consecutive uppercase letters to have only the first letter uppercase,
+// while preserving word boundaries.
+// Examples:
+//   - "SomeID" -> "SomeId"
+//   - "SomeJSON" -> "SomeJson"
+//   - "HTTPStatus" -> "HttpStatus"
+//   - "ID" -> "Id"
+//   - "URL" -> "Url"
+//   - "HTTPSProtocol" -> "HttpsProtocol"
+func toStrictCamelCase(s string) string {
+	if s == "" {
+		return s
+	}
+
+	runes := []rune(s)
+	result := make([]rune, len(runes))
+	n := len(runes)
+
+	for i := 0; i < n; i++ {
+		r := runes[i]
+		isUpper := r >= 'A' && r <= 'Z'
+
+		if isUpper && i > 0 {
+			prevUpper := runes[i-1] >= 'A' && runes[i-1] <= 'Z'
+			if prevUpper {
+				// Check if next character is lowercase (word boundary)
+				// If next char is lowercase, keep this one uppercase (it's start of new word)
+				// Otherwise, lowercase it
+				nextIsLower := i+1 < n && runes[i+1] >= 'a' && runes[i+1] <= 'z'
+				if !nextIsLower {
+					// Convert consecutive uppercase to lowercase
+					result[i] = r + ('a' - 'A')
+					continue
+				}
+			}
+		}
+		result[i] = r
+	}
+	return string(result)
+}
+
+// validateFieldNaming checks if a field name follows strict CamelCase naming convention.
+// Returns an error if the field name contains consecutive uppercase letters.
+// All consecutive uppercase letters are invalid, including standalone acronyms like "ID".
+// Use "Id" instead of "ID", "SomeId" instead of "SomeID", "SomeJson" instead of "SomeJSON".
+func validateFieldNaming(fieldName string) error {
+	if hasConsecutiveUppercase(fieldName) {
+		corrected := toStrictCamelCase(fieldName)
+		return fmt.Errorf("%w: field '%s' has consecutive uppercase letters, use '%s' instead",
+			ErrInvalidFieldNaming, fieldName, corrected)
+	}
+	return nil
 }
 
 // checkFieldTypeCompatibility checks if a struct field type is compatible with a table field

@@ -176,7 +176,7 @@ func (f Int64Field) As(alias string) Field {
 }
 
 // Increment returns an expression to increment this field by a value
-func (f Int64Field) Increment(value int64) Expression {
+func (f Int64Field) Increment(value int64) Expr {
 	return &fieldOperation{
 		field:    f,
 		operator: "+",
@@ -185,7 +185,7 @@ func (f Int64Field) Increment(value int64) Expression {
 }
 
 // Decrement returns an expression to decrement this field by a value
-func (f Int64Field) Decrement(value int64) Expression {
+func (f Int64Field) Decrement(value int64) Expr {
 	return &fieldOperation{
 		field:    f,
 		operator: "-",

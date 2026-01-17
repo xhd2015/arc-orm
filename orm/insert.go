@@ -9,6 +9,7 @@ import (
 
 	"github.com/xhd2015/arc-orm/field"
 	"github.com/xhd2015/arc-orm/sql"
+	"github.com/xhd2015/arc-orm/sql/expr"
 	"github.com/xhd2015/less-gen/strcase"
 )
 
@@ -56,9 +57,7 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 		}
 
 		// Convert Go value to SQL value based on type
-		var sqlValue interface {
-			ToExpressionSQL() (string, interface{})
-		}
+		var sqlValue expr.Expr
 		var isZero bool
 		switch field.Kind() {
 		case reflect.String:

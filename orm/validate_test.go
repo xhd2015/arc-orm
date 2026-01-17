@@ -32,9 +32,9 @@ func (m *mockEngine) GetEngine() engine.Engine {
 	return m
 }
 
-// Valid test model
+// Valid test model (uses "Id" instead of "ID" for strict CamelCase)
 type ValidModel struct {
-	ID        int64
+	Id        int64
 	Name      string
 	Email     string
 	CreatedAt time.Time
@@ -42,7 +42,7 @@ type ValidModel struct {
 
 // Valid optional fields for the valid model
 type ValidOptional struct {
-	ID        *int64
+	Id        *int64
 	Name      *string
 	Email     *string
 	CreatedAt *time.Time
@@ -50,7 +50,7 @@ type ValidOptional struct {
 
 // Model with extra field
 type ModelWithExtraField struct {
-	ID        int64
+	Id        int64
 	Name      string
 	Email     string
 	CreatedAt time.Time
@@ -59,7 +59,7 @@ type ModelWithExtraField struct {
 
 // Model missing a field
 type ModelMissingField struct {
-	ID   int64
+	Id   int64
 	Name string
 	// Email field missing
 	CreatedAt time.Time
@@ -67,7 +67,7 @@ type ModelMissingField struct {
 
 // Model with wrong field type
 type ModelWrongFieldType struct {
-	ID        int64
+	Id        int64
 	Name      string
 	Email     int64 // Should be string
 	CreatedAt time.Time
@@ -75,7 +75,7 @@ type ModelWrongFieldType struct {
 
 // Optional fields with non-pointer field
 type OptionalNonPointer struct {
-	ID        *int64
+	Id        *int64
 	Name      string // Should be *string
 	Email     *string
 	CreatedAt *time.Time
@@ -252,8 +252,9 @@ func TestValidate_DirectCall(t *testing.T) {
 // Test for field name conversion
 func TestValidate_FieldNameConversion(t *testing.T) {
 	// Create a struct with a field name that needs conversion
+	// Uses "Id" instead of "ID" for strict CamelCase
 	type ModelWithCamelCase struct {
-		ID           int64
+		Id           int64
 		UserName     string // This should be converted to "user_name" in snake_case
 		EmailAddress string // This should be converted to "email_address" in snake_case
 		CreatedAt    time.Time
@@ -261,7 +262,7 @@ func TestValidate_FieldNameConversion(t *testing.T) {
 
 	// Create optional fields with matching names
 	type CamelCaseOptional struct {
-		ID           *int64
+		Id           *int64
 		UserName     *string
 		EmailAddress *string
 		CreatedAt    *time.Time
@@ -305,16 +306,16 @@ func TestValidate_TimeFields(t *testing.T) {
 	testTable.Time("create_time")
 	testTable.Time("update_time")
 
-	// Define a model with proper time fields
+	// Define a model with proper time fields (uses "Id" for strict CamelCase)
 	type ModelWithTimeFields struct {
-		ID         int64
+		Id         int64
 		Name       string
 		CreateTime time.Time
 		UpdateTime time.Time
 	}
 
 	type ModelWithTimeFieldsOpt struct {
-		ID         *int64
+		Id         *int64
 		Name       *string
 		CreateTime *time.Time
 		UpdateTime *time.Time
@@ -329,7 +330,7 @@ func TestValidate_TimeFields(t *testing.T) {
 
 // TestValidate_WrongTimeTypes tests validation with incorrect time field types
 func TestValidate_WrongTimeTypes(t *testing.T) {
-	// Test cases
+	// Test cases (all types use "Id" instead of "ID" for strict CamelCase)
 	testCases := []struct {
 		name          string
 		testSetup     func() (table.Table, error)
@@ -344,13 +345,13 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 				testTable.Time("update_time")
 
 				type WrongCreateTimeType struct {
-					ID         int64
+					Id         int64
 					CreateTime string // should be time.Time
 					UpdateTime time.Time
 				}
 
 				type WrongCreateTimeTypeOpt struct {
-					ID         *int64
+					Id         *int64
 					CreateTime *string
 					UpdateTime *time.Time
 				}
@@ -369,13 +370,13 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 				testTable.Time("update_time")
 
 				type WrongUpdateTimeType struct {
-					ID         int64
+					Id         int64
 					CreateTime time.Time
 					UpdateTime int64 // should be time.Time
 				}
 
 				type WrongUpdateTimeTypeOpt struct {
-					ID         *int64
+					Id         *int64
 					CreateTime *time.Time
 					UpdateTime *int64
 				}
@@ -394,13 +395,13 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 				testTable.Time("update_time")
 
 				type Model struct {
-					ID         int64
+					Id         int64
 					CreateTime time.Time
 					UpdateTime time.Time
 				}
 
 				type WrongOptionalType struct {
-					ID         *int64
+					Id         *int64
 					CreateTime *string // should be *time.Time
 					UpdateTime *time.Time
 				}
@@ -419,13 +420,13 @@ func TestValidate_WrongTimeTypes(t *testing.T) {
 				testTable.Time("update_time")
 
 				type Model struct {
-					ID         int64
+					Id         int64
 					CreateTime time.Time
 					UpdateTime time.Time
 				}
 
 				type OptModel struct {
-					ID         *int64
+					Id         *int64
 					CreateTime *time.Time
 					UpdateTime *time.Time
 				}

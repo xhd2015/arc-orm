@@ -69,9 +69,9 @@ func (m *MockEngine) GetEngine() engine.Engine {
 	return m
 }
 
-// TestModel for query tests
+// TestModel for query tests (uses "Id" for strict CamelCase)
 type TestModel struct {
-	ID    int64
+	Id    int64
 	Name  string
 	Age   int
 	Count int64 // Added for Count tests
@@ -79,7 +79,7 @@ type TestModel struct {
 
 // TestModelOptional for optional fields in tests
 type TestModelOptional struct {
-	ID    *int64
+	Id    *int64
 	Name  *string
 	Age   *int
 	Count *int64 // Added for Count tests
@@ -87,7 +87,7 @@ type TestModelOptional struct {
 
 // TestModel for query tests - extended with time fields
 type TestModelWithTime struct {
-	ID         int64
+	Id         int64
 	Name       string
 	Age        int
 	Count      int64
@@ -97,7 +97,7 @@ type TestModelWithTime struct {
 
 // Optional type for TestModelWithTime
 type TestModelWithTimeOptional struct {
-	ID         *int64
+	Id         *int64
 	Name       *string
 	Age        *int
 	Count      *int64
@@ -126,8 +126,8 @@ func TestQuery_Success(t *testing.T) {
 
 			// Populate the result with test data
 			*resultPtr = []*TestModel{
-				{ID: 1, Name: "Alice", Age: 25, Count: 0},
-				{ID: 2, Name: "Bob", Age: 30, Count: 0},
+				{Id: 1, Name: "Alice", Age: 25, Count: 0},
+				{Id: 2, Name: "Bob", Age: 30, Count: 0},
 			}
 
 			return nil
@@ -163,12 +163,12 @@ func TestQuery_Success(t *testing.T) {
 	}
 
 	// Check first result
-	if results[0].ID != 1 || results[0].Name != "Alice" || results[0].Age != 25 {
+	if results[0].Id != 1 || results[0].Name != "Alice" || results[0].Age != 25 {
 		t.Errorf("First result does not match expected data: %+v", results[0])
 	}
 
 	// Check second result
-	if results[1].ID != 2 || results[1].Name != "Bob" || results[1].Age != 30 {
+	if results[1].Id != 2 || results[1].Name != "Bob" || results[1].Age != 30 {
 		t.Errorf("Second result does not match expected data: %+v", results[1])
 	}
 }
@@ -269,7 +269,7 @@ func TestQueryByID_Found(t *testing.T) {
 
 			// Populate the result with test data
 			*resultPtr = []*TestModel{
-				{ID: 42, Name: "Alice", Age: 25},
+				{Id: 42, Name: "Alice", Age: 25},
 			}
 
 			return nil
@@ -300,7 +300,7 @@ func TestQueryByID_Found(t *testing.T) {
 		t.Fatal("Expected a result, got nil")
 	}
 
-	if result.ID != 42 || result.Name != "Alice" || result.Age != 25 {
+	if result.Id != 42 || result.Name != "Alice" || result.Age != 25 {
 		t.Errorf("Result does not match expected data: %+v", result)
 	}
 }
@@ -340,7 +340,7 @@ func TestQueryByID_NotFound(t *testing.T) {
 		t.Fatalf("Expected an error, got nil")
 	}
 
-	if diff := assert.Diff(err.Error(), "test_table not found with: id=99"); diff != "" {
+	if diff := assert.Diff(err.Error(), "data not found"); diff != "" {
 		t.Error(diff)
 	}
 }
@@ -401,7 +401,7 @@ func TestInsert(t *testing.T) {
 
 	// Model to insert
 	model := &TestModel{
-		ID:   123,
+		Id:   123,
 		Name: "Charlie",
 		Age:  35,
 	}
@@ -516,7 +516,7 @@ func TestUpdateByID(t *testing.T) {
 	}
 
 	call := mockEngine.ExecCalls[0]
-	expectedSQL := "UPDATE `test_table` SET `name`=? WHERE `id` = ?"
+	expectedSQL := "UPDATE `test_table` SET `name`=? WHERE `test_table`.`id` = ?"
 	if diff := assert.Diff(call.SQL, expectedSQL); diff != "" {
 		t.Error(diff)
 	}
@@ -567,7 +567,7 @@ func TestUpdateByID_MultipleFields(t *testing.T) {
 	call := mockEngine.ExecCalls[0]
 	// Since map iteration order is not guaranteed, we can't test the exact SQL string
 	// Instead, check that it contains both fields
-	expectedSQL := "UPDATE `test_table` SET `name`=?, `age`=? WHERE `id` = ?"
+	expectedSQL := "UPDATE `test_table` SET `name`=?, `age`=? WHERE `test_table`.`id` = ?"
 	if diff := assert.Diff(call.SQL, expectedSQL); diff != "" {
 		t.Error(diff)
 	}
@@ -663,8 +663,9 @@ func TestCount_Success(t *testing.T) {
 	mockEngine := &MockQueryEngine{
 		QueryFunc: func(ctx context.Context, sql string, args []interface{}, result interface{}) error {
 			// Check that the query and args were correctly passed
-			if sql != "SELECT COUNT(*) as count FROM test_table" {
-				t.Errorf("Expected query 'SELECT COUNT(*) as count FROM test_table', got %s", sql)
+			expectedSQL := "SELECT COUNT(*) AS `count` FROM `test_table` LIMIT 1"
+			if sql != expectedSQL {
+				t.Errorf("Expected query '%s', got %s", expectedSQL, sql)
 			}
 
 			// Check that result is a pointer to a slice of *TestModel
@@ -675,7 +676,7 @@ func TestCount_Success(t *testing.T) {
 
 			// Populate the result with test data - a single row with count value
 			*resultPtr = []*TestModel{
-				{ID: 0, Name: "", Age: 0, Count: 5}, // Use Count field for the count value
+				{Id: 0, Name: "", Age: 0, Count: 5}, // Use Count field for the count value
 			}
 
 			return nil
@@ -732,16 +733,16 @@ func TestValidate_RejectsCountField(t *testing.T) {
 
 // Test to verify model with wrong Count field type is rejected
 func TestValidate_WrongCountFieldType(t *testing.T) {
-	// Define a model with wrong Count field type
+	// Define a model with wrong Count field type (uses "Id" for strict CamelCase)
 	type WrongCountModel struct {
-		ID    int64
+		Id    int64
 		Name  string
 		Age   int
 		Count string // Should be int64
 	}
 
 	type WrongCountOptional struct {
-		ID    *int64
+		Id    *int64
 		Name  *string
 		Age   *int
 		Count *string
@@ -768,16 +769,16 @@ func TestValidate_WrongCountFieldType(t *testing.T) {
 
 // Test for Count with model lacking Count field
 func TestCount_ModelLacksCountField(t *testing.T) {
-	// Define a model without Count field
+	// Define a model without Count field (uses "Id" for strict CamelCase)
 	type NoCountModel struct {
-		ID   int64
+		Id   int64
 		Name string
 		Age  int
 		// No Count field
 	}
 
 	type NoCountOptional struct {
-		ID   *int64
+		Id   *int64
 		Name *string
 		Age  *int
 	}
@@ -797,35 +798,33 @@ func TestCount_ModelLacksCountField(t *testing.T) {
 		engine: mockEngine,
 	}
 
-	// Execute Count
-	n, err := orm.Count().Query(context.Background())
+	// Execute Count - it should panic because model lacks Count field
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("Expected a panic for model without Count field, got none")
+		}
+		if !errors.Is(r.(error), ErrMissingCountField) {
+			t.Errorf("Expected panic to be ErrMissingCountField, got %v", r)
+		}
+	}()
 
-	// Verify error handling
-	if err == nil {
-		t.Fatal("Expected an error for model without Count field, got nil")
-	}
-
-	if !errors.Is(err, ErrMissingCountField) {
-		t.Errorf("Expected error to be ErrMissingCountField, got %v", err)
-	}
-
-	if n != 0 {
-		t.Errorf("Expected 0, got %d", n)
-	}
+	orm.Count().Query(context.Background())
+	t.Fatal("Expected panic, but no panic occurred")
 }
 
 // Test for Count with model having wrong Count field type
 func TestCount_WrongCountFieldType(t *testing.T) {
-	// Define a model with wrong Count field type
+	// Define a model with wrong Count field type (uses "Id" for strict CamelCase)
 	type WrongCountTypeModel struct {
-		ID    int64
+		Id    int64
 		Name  string
 		Age   int
 		Count string // Wrong type, should be int64
 	}
 
 	type WrongCountTypeOptional struct {
-		ID    *int64
+		Id    *int64
 		Name  *string
 		Age   *int
 		Count *string
@@ -846,21 +845,19 @@ func TestCount_WrongCountFieldType(t *testing.T) {
 		engine: mockEngine,
 	}
 
-	// Execute Count
-	n, err := orm.Count().Query(context.Background())
+	// Execute Count - it should panic because Count field has wrong type
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("Expected a panic for model with wrong Count field type, got none")
+		}
+		if !errors.Is(r.(error), ErrWrongCountFieldType) {
+			t.Errorf("Expected panic to be ErrWrongCountFieldType, got %v", r)
+		}
+	}()
 
-	// Verify error handling
-	if err == nil {
-		t.Fatal("Expected an error for model with wrong Count field type, got nil")
-	}
-
-	if !strings.Contains(err.Error(), "model type must have a Count field of type int64") {
-		t.Errorf("Expected error about Count field type, got: %v", err)
-	}
-
-	if n != 0 {
-		t.Errorf("Expected 0, got %d", n)
-	}
+	orm.Count().Query(context.Background())
+	t.Fatal("Expected panic, but no panic occurred")
 }
 
 // TestInsertWithTimeFields tests the automatic setting of time fields
@@ -884,7 +881,7 @@ func TestInsertWithTimeFields(t *testing.T) {
 
 	// Model to insert with zero time fields
 	model := &TestModelWithTime{
-		ID:   123,
+		Id:   123,
 		Name: "Charlie",
 		Age:  35,
 		// CreateTime and UpdateTime are zero values
@@ -1005,7 +1002,7 @@ func TestUpdateByID_AutoUpdateTime(t *testing.T) {
 	call := mockEngine.ExecCalls[0]
 
 	// Check that the SQL includes both fields
-	if diff := assert.Diff(call.SQL, "UPDATE `test_table` SET `name`=?, `update_time`=? WHERE `id` = ?"); diff != "" {
+	if diff := assert.Diff(call.SQL, "UPDATE `test_table` SET `name`=?, `update_time`=? WHERE `test_table`.`id` = ?"); diff != "" {
 		t.Error(diff)
 	}
 
@@ -1064,7 +1061,7 @@ func TestDeleteByID(t *testing.T) {
 	}
 
 	call := mockEngine.ExecCalls[0]
-	expectedSQL := "DELETE FROM `test_table` WHERE `id` = ?"
+	expectedSQL := "DELETE FROM `test_table` WHERE `test_table`.`id` = ?"
 	if call.SQL != expectedSQL {
 		t.Errorf("Expected SQL %q, got %q", expectedSQL, call.SQL)
 	}

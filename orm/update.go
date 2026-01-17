@@ -8,6 +8,7 @@ import (
 
 	"github.com/xhd2015/arc-orm/field"
 	"github.com/xhd2015/arc-orm/sql"
+	"github.com/xhd2015/arc-orm/sql/expr"
 	"github.com/xhd2015/less-gen/strcase"
 )
 
@@ -120,9 +121,7 @@ func (o *ORM[T, P]) update(ctx context.Context, conditions []field.Expr, data *P
 		}
 
 		// Convert Go value to SQL value based on type
-		var sqlValue interface {
-			ToExpressionSQL() (string, interface{})
-		}
+		var sqlValue expr.Expr
 
 		switch fieldRValue.Kind() {
 		case reflect.String:
@@ -180,12 +179,12 @@ func (o *ORM[T, P]) update(ctx context.Context, conditions []field.Expr, data *P
 	return nil
 }
 
-func (c *ORMUpdateBuilder[T, P]) Set(f field.Field, value field.Expression) *ORMUpdateBuilder[T, P] {
+func (c *ORMUpdateBuilder[T, P]) Set(f field.Field, value expr.Expr) *ORMUpdateBuilder[T, P] {
 	c.builder.Set(f, value)
 	return c
 }
 
-func (c *ORMUpdateBuilder[T, P]) Where(conditions ...field.Expr) *ORMUpdateBuilder[T, P] {
+func (c *ORMUpdateBuilder[T, P]) Where(conditions ...expr.Expr) *ORMUpdateBuilder[T, P] {
 	c.builder.Where(conditions...)
 	return c
 }

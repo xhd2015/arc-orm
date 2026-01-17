@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/xhd2015/arc-orm/field"
+	"github.com/xhd2015/arc-orm/sql/expr"
 )
 
 // Update creates a new UpdateBuilder for the given table
@@ -19,36 +20,51 @@ func Update(tableName string) *UpdateBuilder {
 type UpdateBuilder struct {
 	tableName  string
 	updates    []updateExpr
-	conditions []field.Expr
+	conditions []expr.Expr
+	err        error
 }
 
 // updateExpr represents an update expression in the SET clause
 type updateExpr struct {
-	field field.Field
-	expr  string
-	value interface{}
+	field  field.Field
+	expr   string
+	params []interface{}
 }
 
 // Set adds a field=value expression to the SET clause
-// Value must be a field.Expression
-func (b *UpdateBuilder) Set(f field.Field, value field.Expression) *UpdateBuilder {
-	exprSQL, exprValue := value.ToExpressionSQL()
+// Value must implement expr.Expr
+func (b *UpdateBuilder) Set(f field.Field, value expr.Expr) *UpdateBuilder {
+	if b.err != nil {
+		return b // Skip if already errored
+	}
+	exprSQL, exprParams, err := value.ToSQL()
+	if err != nil {
+		b.err = fmt.Errorf("SET field '%s': %w", f.Name(), err)
+		return b
+	}
 	b.updates = append(b.updates, updateExpr{
-		field: f,
-		expr:  "=" + exprSQL,
-		value: exprValue,
+		field:  f,
+		expr:   "=" + exprSQL,
+		params: exprParams,
 	})
 	return b
 }
 
 // Where adds conditions to the UPDATE query
-func (b *UpdateBuilder) Where(conditions ...field.Expr) *UpdateBuilder {
+func (b *UpdateBuilder) Where(conditions ...expr.Expr) *UpdateBuilder {
+	if b.err != nil {
+		return b // Skip if already errored
+	}
 	b.conditions = append(b.conditions, conditions...)
 	return b
 }
 
 // SQL generates the SQL string and parameters for the UPDATE statement
 func (b *UpdateBuilder) SQL() (string, []interface{}, error) {
+	// Check for staged errors first
+	if b.err != nil {
+		return "", nil, b.err
+	}
 	if b.tableName == "" {
 		return "", nil, errors.New("table name is required")
 	}
@@ -73,8 +89,7 @@ func (b *UpdateBuilder) SQL() (string, []interface{}, error) {
 		sqlBuilder.WriteString(update.field.Name())
 		sqlBuilder.WriteString("`")
 		sqlBuilder.WriteString(update.expr)
-		sqlBuilder.WriteString("?")
-		params = append(params, update.value)
+		params = append(params, update.params...)
 	}
 
 	// Build WHERE clause

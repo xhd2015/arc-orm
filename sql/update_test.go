@@ -140,3 +140,41 @@ func TestReadmeUpdateExample(t *testing.T) {
 		t.Errorf("Expected third param to be int64(1), got %T %v", params[2], params[2])
 	}
 }
+
+func TestUpdateBuilder_ValidationErrors(t *testing.T) {
+	// Test missing table name
+	query := Update("").
+		Set(UserName, String("John"))
+	_, _, err := query.SQL()
+	if err == nil {
+		t.Error("expected error for missing table name")
+	}
+
+	// Test no SET expressions
+	query2 := Update("users")
+	_, _, err = query2.SQL()
+	if err == nil {
+		t.Error("expected error for no SET expressions")
+	}
+}
+
+func TestUpdateBuilder_WithFunctions(t *testing.T) {
+	// Test UPDATE with JSON function
+	query := Update(userTable.Name()).
+		Set(UserName, JsonExtract(UserEmail, String("$.name"))).
+		Where(UserID.Eq(1))
+
+	sqlStr, params, err := query.SQL()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expectedSQL := "UPDATE `users` SET `name`=JSON_EXTRACT(`users`.`email`, ?) WHERE `users`.`id` = ?"
+	if sqlStr != expectedSQL {
+		t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sqlStr, expectedSQL)
+	}
+
+	if len(params) != 2 {
+		t.Errorf("expected 2 params, got %d", len(params))
+	}
+}

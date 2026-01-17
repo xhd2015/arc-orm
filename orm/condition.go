@@ -64,6 +64,7 @@ func (o *ORM[T, P]) toIDCondition(id int64) (field.Expr, error) {
 
 	idField := field.Int64Field{
 		FieldName: "id",
+		TableName: o.table.Name(),
 	}
 
 	return idField.Eq(id), nil
