@@ -334,6 +334,14 @@ func checkFieldTypeCompatibility(structType reflect.Type, tableField field.Field
 		if structType.Kind() != reflect.Float64 {
 			return fmt.Errorf("expected float64 for Float64Field, got %s", structType.String())
 		}
+	case field.BoolField:
+		// BoolField can be mapped to bool or various integer types (MySQL stores booleans as TINYINT(1))
+		switch structType.Kind() {
+		case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			// Valid types
+		default:
+			return fmt.Errorf("expected bool or integer type for BoolField, got %s", structType.String())
+		}
 	default:
 		return fmt.Errorf("unsupported table field type: %T", tableField)
 	}

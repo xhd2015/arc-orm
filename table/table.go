@@ -84,3 +84,14 @@ func (t *Table) Time(name string) field.TimeField {
 	t.fields = append(t.fields, f)
 	return f
 }
+
+// Bool creates a new BoolField for this table
+// In MySQL, boolean values are stored as TINYINT(1) where 0 = false and 1 = true
+func (t *Table) Bool(name string) field.BoolField {
+	f := field.BoolField{
+		FieldName: name,
+		TableName: t.name,
+	}
+	t.fields = append(t.fields, f)
+	return f
+}
