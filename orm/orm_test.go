@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/xhd2015/arc-orm/engine"
+	"github.com/xhd2015/arc-orm/sql"
 	"github.com/xhd2015/arc-orm/table"
 	"github.com/xhd2015/xgo/support/assert"
 )
@@ -1102,5 +1103,124 @@ func TestDeleteByID_MissingIDField(t *testing.T) {
 	// Verify no calls were made to the engine
 	if len(mockEngine.ExecCalls) != 0 {
 		t.Errorf("Expected 0 Exec calls, got %d", len(mockEngine.ExecCalls))
+	}
+}
+
+// TestSelectExpr tests the SelectExpr method for custom expressions
+func TestSelectExpr(t *testing.T) {
+	// Setup a mock engine that captures the SQL
+	var capturedSQL string
+	var capturedArgs []interface{}
+	mockEngine := &MockQueryEngine{
+		QueryFunc: func(ctx context.Context, sqlStr string, args []interface{}, result interface{}) error {
+			capturedSQL = sqlStr
+			capturedArgs = args
+			return nil
+		},
+	}
+
+	// Create a test table
+	testTable := table.New("tasks")
+	testTable.Int64("id")
+	testTable.String("status")
+	createdAt := testTable.Time("created_at")
+
+	// Create ORM instance directly
+	orm := &ORM[TestModelWithTime, TestModelWithTimeOptional]{
+		table:  testTable,
+		engine: mockEngine,
+	}
+
+	// Test SelectExpr generates correct SQL by executing QueryInto
+	var results []*DateCountResult
+	err := orm.SelectExpr(
+		sql.Date(createdAt).As("date"),
+		sql.Count(sql.All).As("count"),
+	).Where(
+		testTable.String("status").Eq("done"),
+	).GroupBy(
+		sql.Date(createdAt),
+	).OrderBy(
+		sql.Date(createdAt).Desc(),
+	).QueryInto(context.Background(), &results)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expectedSQL := "SELECT DATE(`tasks`.`created_at`) AS `date`, COUNT(*) AS `count` FROM `tasks` WHERE `tasks`.`status` = ? GROUP BY DATE(`tasks`.`created_at`) ORDER BY DATE(`tasks`.`created_at`) DESC"
+	if capturedSQL != expectedSQL {
+		t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", capturedSQL, expectedSQL)
+	}
+
+	if len(capturedArgs) != 1 || capturedArgs[0] != "done" {
+		t.Errorf("Args mismatch: got %v, want [done]", capturedArgs)
+	}
+}
+
+// DateCountResult is a custom result type for aggregation queries
+type DateCountResult struct {
+	Date  string `json:"date" xorm:"date"`
+	Count int    `json:"count" xorm:"count"`
+}
+
+// TestQueryInto tests the QueryInto method for custom result types
+func TestQueryInto(t *testing.T) {
+	// Setup a mock engine that returns test data
+	mockEngine := &MockQueryEngine{
+		QueryFunc: func(ctx context.Context, sqlStr string, args []interface{}, result interface{}) error {
+			// Check that result is a pointer to a slice of *DateCountResult
+			resultPtr, ok := result.(*[]*DateCountResult)
+			if !ok {
+				t.Fatalf("Expected result to be *[]*DateCountResult, got %T", result)
+			}
+
+			// Populate the result with test data
+			*resultPtr = []*DateCountResult{
+				{Date: "2024-01-15", Count: 5},
+				{Date: "2024-01-14", Count: 3},
+			}
+
+			return nil
+		},
+	}
+
+	// Create a test table
+	testTable := table.New("tasks")
+	testTable.Int64("id")
+	testTable.String("status")
+	createdAt := testTable.Time("created_at")
+
+	// Create ORM instance directly
+	orm := &ORM[TestModelWithTime, TestModelWithTimeOptional]{
+		table:  testTable,
+		engine: mockEngine,
+	}
+
+	// Execute query with QueryInto
+	var results []*DateCountResult
+	err := orm.SelectExpr(
+		sql.Date(createdAt).As("date"),
+		sql.Count(sql.All).As("count"),
+	).Where(
+		testTable.String("status").Eq("done"),
+	).GroupBy(
+		sql.Date(createdAt),
+	).QueryInto(context.Background(), &results)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 2 {
+		t.Fatalf("Expected 2 results, got %d", len(results))
+	}
+
+	if results[0].Date != "2024-01-15" || results[0].Count != 5 {
+		t.Errorf("First result mismatch: got %+v", results[0])
+	}
+
+	if results[1].Date != "2024-01-14" || results[1].Count != 3 {
+		t.Errorf("Second result mismatch: got %+v", results[1])
 	}
 }

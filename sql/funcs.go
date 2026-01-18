@@ -52,6 +52,36 @@ func (f *sqlFunc) ToSQL() (string, []interface{}, error) {
 	return f.name + "(" + strings.Join(sqlParts, ", ") + ")", params, nil
 }
 
+// As returns an aliased version of this function
+func (f *sqlFunc) As(alias string) *aliasedExpr {
+	return &aliasedExpr{expr: f, alias: alias}
+}
+
+// Desc returns a descending order specification for this function
+func (f *sqlFunc) Desc() OrderField {
+	return OrderField{Field: f, Desc: true}
+}
+
+// Asc returns an ascending order specification for this function
+func (f *sqlFunc) Asc() OrderField {
+	return OrderField{Field: f, Desc: false}
+}
+
+// aliasedExpr wraps an expression with an alias
+type aliasedExpr struct {
+	expr  expr.Expr
+	alias string
+}
+
+// ToSQL implements expr.Expr for aliased expressions
+func (a *aliasedExpr) ToSQL() (string, []interface{}, error) {
+	sql, params, err := a.expr.ToSQL()
+	if err != nil {
+		return "", nil, err
+	}
+	return sql + " AS `" + a.alias + "`", params, nil
+}
+
 // Concat creates a CONCAT SQL function call.
 // Example: Concat(field, sql.String(" suffix")) generates CONCAT(`table`.`field`, ?)
 func Concat(args ...expr.Expr) *sqlFunc {
@@ -166,4 +196,10 @@ func JsonKeys(json expr.Expr) *sqlFunc {
 // Example: JsonSearch(dataField, sql.String("one"), sql.String("value"))
 func JsonSearch(json expr.Expr, oneOrAll expr.Expr, searchStr expr.Expr) *sqlFunc {
 	return Func("JSON_SEARCH", json, oneOrAll, searchStr)
+}
+
+// Date creates a DATE SQL function call to extract the date part from a datetime.
+// Example: Date(createdAt) generates DATE(`table`.`created_at`)
+func Date(f expr.Expr) *sqlFunc {
+	return Func("DATE", f)
 }

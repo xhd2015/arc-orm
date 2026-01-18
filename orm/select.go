@@ -28,6 +28,19 @@ func (c *ORM[T, P]) Select(fields ...field.Field) *ORMSelectBuilder[T, P] {
 	}
 }
 
+// SelectExpr creates a select query with arbitrary expressions.
+// Use this for queries with aggregations, functions, or custom expressions
+// that don't map directly to entity fields.
+// Example:
+//
+//	orm.SelectExpr(sql.Date(field).As("date"), sql.Count(sql.All).As("count"))
+func (c *ORM[T, P]) SelectExpr(exprs ...sql.Expr) *ORMSelectBuilder[T, P] {
+	return &ORMSelectBuilder[T, P]{
+		builder: sql.Select(exprs...).From(c.table.Name()),
+		orm:     c,
+	}
+}
+
 func fieldsToExprs(fields []field.Field) []sql.Expr {
 	exprs := make([]sql.Expr, 0, len(fields))
 	for _, field := range fields {
@@ -48,6 +61,16 @@ func (c *ORMSelectBuilder[T, P]) Where(conditions ...field.Expr) *ORMSelectBuild
 
 func (c *ORMSelectBuilder[T, P]) LeftJoin(tableName string, condition field.Expr) *ORMSelectBuilder[T, P] {
 	c.builder.LeftJoin(tableName, condition)
+	return c
+}
+
+func (c *ORMSelectBuilder[T, P]) GroupBy(exprs ...expr.Expr) *ORMSelectBuilder[T, P] {
+	c.builder.GroupBy(exprs...)
+	return c
+}
+
+func (c *ORMSelectBuilder[T, P]) Having(conditions ...field.Expr) *ORMSelectBuilder[T, P] {
+	c.builder.Having(conditions...)
 	return c
 }
 
@@ -99,4 +122,24 @@ func (c *ORMSelectBuilder[T, P]) RequireOne(ctx context.Context) (*T, error) {
 		return nil, fmt.Errorf("record not found")
 	}
 	return result, nil
+}
+
+// QueryInto executes the query and scans results into the provided slice pointer.
+// This is useful for queries with custom SELECT expressions (like aggregations)
+// that don't match the ORM's entity type.
+// Example:
+//
+//	type Result struct {
+//	    Date  string `json:"date"`
+//	    Count int    `json:"count"`
+//	}
+//	var results []*Result
+//	err := orm.SelectExpr(sql.Date(field), sql.Count(sql.All).As("count")).
+//	    Where(...).GroupBy(sql.Date(field)).QueryInto(ctx, &results)
+func (c *ORMSelectBuilder[T, P]) QueryInto(ctx context.Context, result interface{}) error {
+	sqlStr, args, err := c.builder.SQL()
+	if err != nil {
+		return err
+	}
+	return c.orm.engine.GetEngine().Query(ctx, sqlStr, args, result)
 }

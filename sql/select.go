@@ -132,7 +132,7 @@ type SelectBuilder struct {
 	joins         []join
 	conditions    []field.Expr
 	excludeFields []field.Field
-	groupBys      []field.Field
+	groupBys      []expr.Expr
 	havings       []field.Expr
 	orderBys      []orderBy
 	limit         int
@@ -189,9 +189,10 @@ func (b *SelectBuilder) LeftJoin(tableName string, condition field.Expr) *Select
 	return b
 }
 
-// GroupBy adds GROUP BY fields to the query
-func (b *SelectBuilder) GroupBy(fields ...field.Field) *SelectBuilder {
-	b.groupBys = append(b.groupBys, fields...)
+// GroupBy adds GROUP BY expressions to the query
+// Accepts field.Field or sql.Func (e.g., sql.Date(field))
+func (b *SelectBuilder) GroupBy(exprs ...expr.Expr) *SelectBuilder {
+	b.groupBys = append(b.groupBys, exprs...)
 	return b
 }
 

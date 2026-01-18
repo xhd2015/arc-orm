@@ -54,8 +54,8 @@ func (c *ORMCountBuilder[T, P]) Where(conditions ...field.Expr) *ORMCountBuilder
 	return c
 }
 
-func (c *ORMCountBuilder[T, P]) GroupBy(fields ...field.Field) *ORMCountBuilder[T, P] {
-	c.builder.GroupBy(fields...)
+func (c *ORMCountBuilder[T, P]) GroupBy(exprs ...field.Expr) *ORMCountBuilder[T, P] {
+	c.builder.GroupBy(exprs...)
 	return c
 }
 

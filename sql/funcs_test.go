@@ -241,6 +241,151 @@ func contains(s, substr string) bool {
 	return false
 }
 
+func TestDateFunc(t *testing.T) {
+	// Create test table
+	testTable := table.New("tasks")
+	createdAt := testTable.Time("created_at")
+
+	t.Run("DATE function", func(t *testing.T) {
+		dateFunc := Date(createdAt)
+		sql, args, err := dateFunc.ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "DATE(`tasks`.`created_at`)"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+
+		if len(args) != 0 {
+			t.Errorf("expected 0 args, got %d", len(args))
+		}
+	})
+
+	t.Run("DATE in SELECT", func(t *testing.T) {
+		query := Select(Date(createdAt)).From(testTable.Name())
+		sql, _, err := query.SQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "SELECT DATE(`tasks`.`created_at`) FROM `tasks`"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+	})
+
+	t.Run("DATE in GROUP BY", func(t *testing.T) {
+		query := Select(Date(createdAt), Count(All).As("count")).
+			From(testTable.Name()).
+			GroupBy(Date(createdAt))
+		sql, _, err := query.SQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "SELECT DATE(`tasks`.`created_at`), COUNT(*) AS `count` FROM `tasks` GROUP BY DATE(`tasks`.`created_at`)"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+	})
+}
+
+func TestFuncAs(t *testing.T) {
+	// Create test table
+	testTable := table.New("tasks")
+	createdAt := testTable.Time("created_at")
+
+	t.Run("As alias", func(t *testing.T) {
+		aliased := Date(createdAt).As("date")
+		sql, args, err := aliased.ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "DATE(`tasks`.`created_at`) AS `date`"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+
+		if len(args) != 0 {
+			t.Errorf("expected 0 args, got %d", len(args))
+		}
+	})
+
+	t.Run("As in SELECT", func(t *testing.T) {
+		query := Select(Date(createdAt).As("date"), Count(All).As("count")).
+			From(testTable.Name()).
+			GroupBy(Date(createdAt))
+		sql, _, err := query.SQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "SELECT DATE(`tasks`.`created_at`) AS `date`, COUNT(*) AS `count` FROM `tasks` GROUP BY DATE(`tasks`.`created_at`)"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+	})
+}
+
+func TestFuncDescAsc(t *testing.T) {
+	// Create test table
+	testTable := table.New("tasks")
+	createdAt := testTable.Time("created_at")
+
+	t.Run("Desc ordering", func(t *testing.T) {
+		orderField := Date(createdAt).Desc()
+		sql, args, err := orderField.ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "DATE(`tasks`.`created_at`) DESC"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+
+		if len(args) != 0 {
+			t.Errorf("expected 0 args, got %d", len(args))
+		}
+	})
+
+	t.Run("Asc ordering", func(t *testing.T) {
+		orderField := Date(createdAt).Asc()
+		sql, args, err := orderField.ToSQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "DATE(`tasks`.`created_at`) ASC"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+
+		if len(args) != 0 {
+			t.Errorf("expected 0 args, got %d", len(args))
+		}
+	})
+
+	t.Run("ORDER BY with Desc", func(t *testing.T) {
+		query := Select(Date(createdAt).As("date"), Count(All).As("count")).
+			From(testTable.Name()).
+			GroupBy(Date(createdAt)).
+			OrderBy(Date(createdAt).Desc())
+		sql, _, err := query.SQL()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		expectedSQL := "SELECT DATE(`tasks`.`created_at`) AS `date`, COUNT(*) AS `count` FROM `tasks` GROUP BY DATE(`tasks`.`created_at`) ORDER BY DATE(`tasks`.`created_at`) DESC"
+		if sql != expectedSQL {
+			t.Errorf("SQL mismatch:\n  got:  %s\n  want: %s", sql, expectedSQL)
+		}
+	})
+}
+
 func TestJsonFuncs(t *testing.T) {
 	// Create test table
 	testTable := table.New("users")
