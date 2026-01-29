@@ -153,7 +153,12 @@ func validateModelType[T any](tbl table.Table) error {
 	for modelFieldName, structField := range modelFieldMap {
 		tableField, exists := tableFieldMap[modelFieldName]
 		if exists {
-			if err := checkFieldTypeCompatibility(structField.Type, tableField); err != nil {
+			// Unwrap pointer type if the model field is a pointer
+			fieldType := structField.Type
+			if fieldType.Kind() == reflect.Ptr {
+				fieldType = fieldType.Elem()
+			}
+			if err := checkFieldTypeCompatibility(fieldType, tableField); err != nil {
 				return fmt.Errorf("%w: field %s, %v", ErrFieldTypeMismatch, modelFieldName, err)
 			}
 		}
@@ -221,9 +226,14 @@ func validateOptionalType[T, P any]() error {
 		}
 
 		// Check if pointer type matches model field type
-		if optField.Type.Elem() != modelField.Type {
+		// If model field is already a pointer, compare the element types
+		modelFieldType := modelField.Type
+		if modelFieldType.Kind() == reflect.Ptr {
+			modelFieldType = modelFieldType.Elem()
+		}
+		if optField.Type.Elem() != modelFieldType {
 			return fmt.Errorf("%w: optional field %s pointer type %s doesn't match model field type %s",
-				ErrFieldTypeMismatch, optField.Name, optField.Type.Elem(), modelField.Type)
+				ErrFieldTypeMismatch, optField.Name, optField.Type.Elem(), modelFieldType)
 		}
 	}
 

@@ -328,6 +328,68 @@ func TestValidate_TimeFields(t *testing.T) {
 	}
 }
 
+// TestValidate_ModelWithPointerFields tests that models can have pointer fields
+// The model type validation should allow pointer fields
+func TestValidate_ModelWithPointerFields(t *testing.T) {
+	// Create a test table
+	testTable := table.New("test_table")
+	testTable.Int64("id")
+	testTable.String("name")
+	testTable.String("email")
+
+	// Model with pointer fields
+	type ModelWithPointerFields struct {
+		Id    int64
+		Name  *string // pointer field in model
+		Email *string // pointer field in model
+	}
+
+	// Optional type uses single pointer to the underlying type
+	type ModelWithPointerFieldsOpt struct {
+		Id    *int64
+		Name  *string // pointer to the underlying type (string), not **string
+		Email *string
+	}
+
+	// Test should pass - model with pointer fields is allowed
+	_, err := bind[ModelWithPointerFields, ModelWithPointerFieldsOpt](&mockEngine{}, testTable)
+	if err != nil {
+		t.Fatalf("Expected validation to pass for model with pointer fields, got error: %v", err)
+	}
+}
+
+// TestValidate_ModelWithMixedPointerFields tests models with both pointer and non-pointer fields
+func TestValidate_ModelWithMixedPointerFields(t *testing.T) {
+	// Create a test table
+	testTable := table.New("test_table")
+	testTable.Int64("id")
+	testTable.String("name")
+	testTable.Int64("age")
+	testTable.String("email")
+
+	// Model with mixed pointer and non-pointer fields
+	type MixedModel struct {
+		Id    int64   // non-pointer
+		Name  *string // pointer
+		Age   int64   // non-pointer
+		Email *string // pointer
+	}
+
+	// Optional type uses single pointer to the underlying type
+	type MixedModelOpt struct {
+		Id    *int64
+		Name  *string // pointer to the underlying type (string)
+		Age   *int64
+		Email *string
+	}
+
+	// Test should pass
+	_, err := bind[MixedModel, MixedModelOpt](&mockEngine{}, testTable)
+	if err != nil {
+		t.Fatalf("Expected validation to pass for model with mixed pointer fields, got error: %v", err)
+	}
+}
+
 // TestValidate_WrongTimeTypes tests validation with incorrect time field types
 func TestValidate_WrongTimeTypes(t *testing.T) {
 	// Test cases (all types use "Id" instead of "ID" for strict CamelCase)
