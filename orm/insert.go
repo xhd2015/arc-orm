@@ -56,6 +56,15 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 			return 0, fmt.Errorf("field %s not found in table %s", fieldName, o.table.Name())
 		}
 
+		// Handle pointer types - skip nil pointers (let DB use NULL default)
+		if field.Kind() == reflect.Ptr {
+			if field.IsNil() {
+				continue
+			}
+			// Dereference the pointer for conversion
+			field = field.Elem()
+		}
+
 		// Convert Go value to SQL value based on type
 		var sqlValue expr.Expr
 		var isZero bool
@@ -78,7 +87,7 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 			sqlValue = sql.Bool(field.Bool())
 		case reflect.Struct:
 			// Handle time.Time specially
-			if fieldType.Type.String() == "time.Time" {
+			if field.Type().String() == "time.Time" {
 				timeValue := field.Interface().(time.Time)
 
 				// Auto-fill CreateTime and UpdateTime with current time if they're zero
