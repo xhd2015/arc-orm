@@ -95,6 +95,11 @@ func (o *ORM[T, P]) Insert(ctx context.Context, model *T) (int64, error) {
 					timeValue = time.Now()
 				}
 
+				// Skip zero time values to let DB use default/NULL
+				if timeValue.IsZero() {
+					continue
+				}
+
 				sqlValue = sql.Time(timeValue)
 			}
 		}
